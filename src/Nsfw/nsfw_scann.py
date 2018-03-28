@@ -3,7 +3,7 @@ from src.utils import constants
 from src.utils.message import Message
 
 
-class NsfwClassify(QtCore.QThread):
+class NsfwScann(QtCore.QThread):
     #Model 
     model = None
     weight_file = 'model/max_open_nsfw.h5'

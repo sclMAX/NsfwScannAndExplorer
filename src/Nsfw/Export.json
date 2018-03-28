@@ -1,0 +1,69 @@
+﻿{
+  "odata.metadata": "http://github.com/ICMEC/ProjectVic/DataModels/1.3.xml#Cases",
+  "value": [
+    {
+      "odata.id": "Case(\"b617fcea-e570-46f3-98d0-5529b439048d\")",
+      "odata.editLink": "/Case(b617fcea-e570-46f3-98d0-5529b439048d)",
+      "CaseMetadata@odata.navigationLinkUrl": "/Case(b617fcea-e570-46f3-98d0-5529b439048d)/CaseMetadata",
+      "CaseMetadata": [
+        {
+          "odata.editLink": "/CaseMetadata(PropertyName='Case Info',CaseID=b617fcea-e570-46f3-98d0-5529b439048d)",
+          "Case@odata.navigationLinkUrl": "/CaseMetadata(PropertyName='Case Info',CaseID=b617fcea-e570-46f3-98d0-5529b439048d)",
+          "CaseID": "b617fcea-e570-46f3-98d0-5529b439048d",
+          "PropertyName": "CaseName",
+          "PropertyValue": "Case Info"
+        }
+      ],
+      "Media@odata.navigationLinkUrl": "/Case(b617fcea-e570-46f3-98d0-5529b439048d)/Media",
+      "Media": [
+        {
+          "odata.id": "Media(\"7BF1755B41CB29066B2EF6E0B0706A80\")",
+          "odata.editLink": "/Media(7BF1755B41CB29066B2EF6E0B0706A80)",
+          "AlternativeHashes@odata.navigationLinkUrl": "/Media(7BF1755B41CB29066B2EF6E0B0706A80)/AlternativeHashes",
+          "AlternativeHashes": [],
+          "Exifs@odata.navigationLinkUrl": "/Media(7BF1755B41CB29066B2EF6E0B0706A80)/Exifs",
+          "Exifs": [],
+          "MediaFiles": [
+            {
+              "odata.editLink": "/MediaFiles(FileName='Physical Sector 5924119',FilePath='I0210_02.E01 - Partition 1 (Microsoft NTFS, 37,26 GB) (Unallocated Clusters)',MD5=7BF1755B41CB29066B2EF6E0B0706A80)",
+              "Media@odata.navigationLinkUrl": "/MediaFiles(FileName='Physical Sector 5924119',FilePath='I0210_02.E01 - Partition 1 (Microsoft NTFS, 37,26 GB) (Unallocated Clusters)',MD5=7BF1755B41CB29066B2EF6E0B0706A80)",
+              "MD5": "7BF1755B41CB29066B2EF6E0B0706A80",
+              "FileName": "Physical Sector 5924119",
+              "FilePath": "I0210_02.E01 - Partition 1 (Microsoft NTFS, 37,26 GB) (Unallocated Clusters)",
+              "Created": null,
+              "Written": null,
+              "Accessed": null,
+              "Unallocated": true
+            }
+          ],
+          "MediaID": 0,
+          "Category": null,
+          "Comments": "",
+          "VictimIdentified": null,
+          "IsDistributed": null,
+          "OffenderIdentified": null,
+          "MD5": "7BF1755B41CB29066B2EF6E0B0706A80",
+          "Series": null,
+          "SHA1": "F069885B46D05F1887615DB64E0149EB5159A7CC",
+          "Tags": "",
+          "MediaSize": "3229",
+          "RelativeFilePath": "Attachments\\0000001_Carved",
+          "IsPrecategorized": false,
+          "IsSuspected": false
+        }
+      ],
+      "CaseID": "b617fcea-e570-46f3-98d0-5529b439048d",
+      "CaseNumber": "I0210_02",
+      "ContactOrganization": "",
+      "ContactName": "Ing. Guillermo Fritz",
+      "ContactPhone": "",
+      "ContactEmail": "",
+      "ContactTitle": "",
+      "TotalMediaFiles": 5,
+      "TotalPrecategorized": 0,
+      "SeizureDate": "2018-03-23T06:57:04",
+      "SourceApplicationName": "AXIOMExamine",
+      "SourceApplicationVersion": "1.2.3.8107"
+    }
+  ]
+}
