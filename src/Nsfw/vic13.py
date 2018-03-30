@@ -7,7 +7,6 @@ def isVICValid(VIC={}):
 
 
 def readVICFromFile(VICFile):
-    vic = {}
     vic = json.load(codecs.open(VICFile, 'r', 'utf-8-sig'))
     if(isVICValid(vic)):
         return vic

@@ -15,13 +15,13 @@ class NsfwScann(QtCore.QThread):
     progress = QtCore.pyqtSignal(int)
 
     # Scann Vars
-    filesList = ''
     media = []
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
     def loadModel(self):
+        self.progressMax.emit(0)
         msg = Message('Cargando Backend Tensorflow...', True)
         self.status.emit(msg)
         from keras import backend as K
@@ -45,6 +45,18 @@ class NsfwScann(QtCore.QThread):
         finally:
             if json_file:
                 json_file.close()
+
+    def isPorno(self, img_path):
+        from keras.preprocessing import image
+        import numpy as np
+        from keras.applications.imagenet_utils import preprocess_input
+
+        img = image.load_img(img_path, target_size=(224, 224))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        x = preprocess_input(x)
+        preds = self.model.predict(x)
+        return preds[0][1]
 
     def scannFolder(self, folder):
         self.status.emit(Message('Buscando Archivos...', True))

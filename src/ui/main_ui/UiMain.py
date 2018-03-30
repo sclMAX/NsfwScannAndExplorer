@@ -12,6 +12,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.progressBar.setVisible(False)
         self.nsfw = NsfwScann(self)
         self.nsfw.status.connect(self.setStatus)
         self.nsfw.progressMax.connect(self.progressBar.setMaximum)
@@ -20,6 +21,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnOpenFolder.clicked.connect(self.btnOpenFolder_Click)
     
     def btnScannFolder_Click(self):
+        
         #TODO codigo para abrir Directorio
         self.VIC = genNewVic()
         self.nsfw.scannFolder('icons') #TODO dummy
