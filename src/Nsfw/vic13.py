@@ -57,14 +57,12 @@ def updateMediaItem(mediaItem, data={}):
         for k in data:
             mediaItem[k] = data[k]
 
+def updateMedia(VIC, newMedia):
+    VIC['value'][0]['Media'] = newMedia
 
 def getMediaFormVIC(VIC={}):
-    value = VIC.get('value')
-    if(value):
-        media = value[0]['Media']
-        if(media):
-            return media
-    return None
+    return VIC['value'][0]['Media']
+  
 
 
 def genNewVic():

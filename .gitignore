@@ -100,3 +100,12 @@ ENV/
 # mypy
 .mypy_cache/
 .vscode
+Rotas
+miniatures
+json
+Export.json
+log.txt
+NewReport.json
+NewReport1.json
+src/Nsfw/Export.json
+src/Nsfw/Export.json
