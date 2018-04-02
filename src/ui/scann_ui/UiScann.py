@@ -10,19 +10,20 @@ from pathlib import Path
 
 class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
 
-    nsfw = None
-    scannFolder = ''
-    vicFile = ''
-    saveFile = ''
-    saveFolder = ''
+    nsfw: NsfwScann = None
+    imgFinder: ImagesFinder = None
+    scannFolder: str = ''
+    vicFile: str = ''
+    saveFile: str = ''
+    saveFolder: str = ''
     VIC = None
 
-    isInScann = False
-    isScannFinish = False
+    isInScann: bool = False
+    isScannFinish: bool = False
 
-    timer = QtCore.QTimer()
-    charId = 0
-    currentTxt = ''
+    timer: QtCore.QTimer = QtCore.QTimer()
+    charId: int = 0
+    currentTxt: str = ''
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -35,11 +36,9 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.nsfw.statusBar.connect(self.setStatusBar)
         self.nsfw.status.connect(self.setStatus)
         self.nsfw.finish.connect(self.nsfw_finish)
-        self.chkMiniaturas.stateChanged.connect(self.nsfw.setIsMiniatura)
         self.selScore.valueChanged.connect(self.progressBarScore.setValue)
         self.progressBarScore.valueChanged.connect(self.nsfw.setMinScore)
         self.nsfw.setMinScore(self.selScore.value())
-        self.nsfw.setIsMiniatura(self.chkMiniaturas.isChecked())
         self.btnClose.clicked.connect(self.btnClose_Click)
         self.btnAceptar.clicked.connect(self.btnAceptar_Click)
         self.btnStart.clicked.connect(self.btnStart_Click)
@@ -124,7 +123,10 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
                 self, 'Escaneo en Curso!', 'Desea detener en escaneo en curso?')
             if(q == QtWidgets.QMessageBox.No):
                 return
-            self.nsfw.stop()
+            if(self.nsfw):
+                self.nsfw.stop()
+            if(self.imgFinder):
+                self.imgFinder.stop()
             isEnable = True
             self.isInScann = False
             self.btnScannFolder.setEnabled(isEnable)
@@ -155,7 +157,6 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.btnVIC.setEnabled(isEnable)
         if(self.scannFolder):
             self.VIC = genNewVic()
-            #self.nsfw.scannFolder(self.scannFolder, self.saveFolder)
             self.scannFolder_Start()
         elif(self.vicFile):
             self.VIC = readVICFromFile(self.vicFile)
@@ -200,10 +201,15 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             self.btnStart.setEnabled(False)
 
     def scannFolder_Start(self):
-        imgFinder = ImagesFinder(self)
-        imgFinder.status.connect(self.setStatus)
-        imgFinder.finish.connect(self.ImageFileFinder_Finish)
-        imgFinder.find(self.scannFolder)
+        self.imgFinder = ImagesFinder(self, self.scannFolder)
+        self.imgFinder.status.connect(self.setStatus)
+        self.imgFinder.statusBar.connect(self.setStatusBar)
+        self.imgFinder.finish.connect(self.ImagesFinder_Finish)
+        self.imgFinder.progressMax.connect(self.progressBar.setMaximum)
+        self.imgFinder.progress.connect(self.progressBar.setValue)
+        self.imgFinder.find()
 
-    def ImageFileFinder_Finish(self, fileList:list):
-        print(fileList)
+    def ImagesFinder_Finish(self, media: list):
+        if(media):
+            updateMedia(self.VIC, media)
+            self.nsfw.scannVIC(self.VIC, '', self.saveFolder)

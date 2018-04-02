@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1115</width>
-    <height>590</height>
+    <width>1001</width>
+    <height>613</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -232,8 +232,14 @@
            <height>0</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="title">
-          <string>Configuracíon</string>
+          <string>Filtro por Probabilidad</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -242,27 +248,7 @@
           <property name="sizeConstraint">
            <enum>QLayout::SetDefaultConstraint</enum>
           </property>
-          <item>
-           <widget class="QCheckBox" name="chkMiniaturas">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Si esta Activado crea miniaturas durante elproceso de escaneo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Crear miniaturas</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Filtro por Probabilidad </string>
-            </property>
-           </widget>
-          </item>
-          <item>
+          <item alignment="Qt::AlignTop">
            <widget class="QProgressBar" name="progressBarScore">
             <property name="palette">
              <palette>
@@ -306,7 +292,7 @@
             </property>
            </widget>
           </item>
-          <item>
+          <item alignment="Qt::AlignTop">
            <widget class="QSlider" name="selScore">
             <property name="palette">
              <palette>

@@ -1,7 +1,10 @@
 from PyQt5 import QtCore
 from imghdr import what
 from pathlib import Path
-from src.utils.message import Message, NORMAL
+from src.utils.message import Message, NORMAL, DANGER, WARNING
+from src.utils.formats import secondsToHMS
+from src.Nsfw.vic13 import genNewMediaItem, updateMediaItem
+from time import time
 
 
 def searching_all_files(path: Path):
@@ -16,93 +19,90 @@ def searching_all_files(path: Path):
     return file_list
 
 
-class FilesFinder(QtCore.QThread):
-    id: int = 0
+class ImagesFinder(QtCore.QThread):
     findPath: str = ''
-    fileList: list = []
-    dirList: list = []
-    isRun:bool = False
+    isRun: bool = False
     # Signals
-    finish = QtCore.pyqtSignal(QtCore.QThread,int, list, list)  # id, fileList, dirList
-    status = QtCore.pyqtSignal(int, int)  # images , files
+    finish: QtCore.pyqtSignal = QtCore.pyqtSignal(list)
+    status: QtCore.pyqtSignal = QtCore.pyqtSignal(Message)
+    statusBar: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
+    progressMax: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
+    progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
+    # Process Vars
+    tInico: int = time()
+    totalFiles: int = 0
+    totalImages: int = 0
 
-    def __init__(self, parent: object, id: int, findPath: str):
+    def __init__(self, parent: object, findPath: str):
         super().__init__(parent)
-        self.id = id
         self.findPath = findPath
 
     def find(self):
+        self.tInico = time()
+        self.isRun = True
         self.start()
 
-    def run(self):
-        print('RUNNN ID:',self.id)
-        self.isRun = True
-        dirpath = Path(self.findPath)
+    def stop(self,):
+        self.isRun = False
+        self.status.emit(Message('Proceso cancelado!', False, DANGER, True))
+        self.exit()
+
+    def emitStatusBar(self):
+        et: int = time() - self.tInico
+        fs: float = self.totalFiles / et
+        txt: str = 'I: %d de A: %d | T: %s @ %.2f A/Seg' % (
+            self.totalImages, self.totalFiles, secondsToHMS(et), fs)
+        self.statusBar.emit(txt)
+
+    def __findImages(self, path: str):
+        dirpath = Path(path)
         assert(dirpath.is_dir())
-        files: int = 0
-        images: int = 0
+        file_list = []
         for x in dirpath.iterdir():
+            if(not self.isRun):
+                break
             if x.is_file():
-                files += 1
-                fileType = what(x)
-                self.status.emit(images, files)
-                if(not fileType):
-                    continue
-                images += 1
-                self.fileList.append({'file': x, 'type': fileType})
+                try:
+                    self.totalFiles += 1
+                    fileType = what(x)
+                    if(not fileType):
+                        continue
+                    self.totalImages += 1
+                    file_list.append(
+                        {'file': str(x), 'type': fileType})
+                finally:
+                    txt: str = 'Encontradas %d Imagenes  de %d Archivos encontrados! Buscando...' % (
+                        self.totalImages, self.totalFiles)
+                    self.status.emit(Message(txt, False, NORMAL, False))
+                    self.emitStatusBar()
             elif x.is_dir():
-                self.dirList.append(str(x))
-        if(self.isRun):
-            self.isRun = False
-            self.finish.emit(self,self.id, self.fileList, self.dirList)
+                file_list.extend(self.__findImages(str(x)))
+        return file_list
 
-        
-
-
-class ImagesFinder(QtCore.QObject):
-
-    parent: object = None
-    fileList: list = []
-    # Threads Vars
-    maxThreads: int = QtCore.QThread.idealThreadCount()
-    threads: list = []
-    countThreads: int = 0
-    pathStack: list = []
-    totalFiles: int = 0
-    totalImages: int = 0
-    mutex = QtCore.QMutex()
-
-    # Signals
-    status = QtCore.pyqtSignal(Message)
-    finish = QtCore.pyqtSignal(list)
-
-    def __init__(self, parent: None):
-        super().__init__(parent)
-        self.parent = parent
-
-    def find(self, path: str):
-        self.createThread(path)
-        
-    def createThread(self, path:str):
-        self.countThreads += 1
-        print('CREADO ID:', self.countThreads,' DE ',self.countThreads)
-        self.threads.append(self.countThreads)
-        self.filesFinder = FilesFinder(self, self.countThreads, path)
-        self.filesFinder.finish.connect(self.threadFinish)
-        self.filesFinder.status.connect(self.threadStatus)
-        self.filesFinder.find()
-
-    def threadStatus(self, images: int, files: int):
-        self.totalFiles += files
-        self.totalImages += images
-        msg = Message('%d Imagenes de %d Archivos Encontrados...'%(self.totalImages,self.totalFiles),
-                      False, NORMAL, False)
-        self.status.emit(msg)
-
-    def threadFinish(self,th:QtCore.QThread, id: int, fileList: list, dirList: list):
-        try:
-            self.mutex.lock()
-            #TODO implementar uso de multiplet Threads      
-            
-        finally:
-            self.mutex.unlock()
+    def run(self):
+        self.status.emit(Message('Buscando Imagenes...'))
+        # Buscar imagen en directorio y subdirectorios
+        fileList: list = self.__findImages(self.findPath)
+        if(len(fileList)):
+            # Crear media con las imagen encontradas
+            media: list = []
+            count: int = 0
+            self.progressMax.emit(len(fileList))
+            self.status.emit(Message('Creando Media...', True))
+            for f in fileList:
+                if(not self.isRun):
+                    break
+                mediaItem = genNewMediaItem()
+                updateMediaItem(mediaItem, {
+                    'MediaID': count,
+                    'RelativeFilePath': str(f['file']),
+                    'ImageType': str(f['type'])
+                })
+                media.append(mediaItem)
+                count += 1
+                self.progress.emit(count)
+            self.finish.emit(media)
+        else:
+            self.status.emit(Message(
+                'No se encontraron Imagenes en el Directorio seleccionado!', False, WARNING))
+            self.finish.emit(None)
