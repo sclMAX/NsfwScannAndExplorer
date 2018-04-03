@@ -1,8 +1,7 @@
 from src.ui.scann_ui.ui_nsfw_scann import Ui_dlgNsfwScanner
 from PyQt5 import QtWidgets, QtGui, QtCore
 from src.Nsfw.nsfw_scann import NsfwScann
-from src.utils.constants import NORMAL, WARNING, DANGER
-from src.utils.message import Message
+from src.utils.message import Message, NORMAL, WARNING, DANGER
 from src.utils.files import ImagesFinder
 from src.Nsfw.vic13 import readVICFromFile, genNewVic, updateMedia
 from pathlib import Path
@@ -55,11 +54,11 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.repaint()
 
     def timerTimeOut(self):
-        c = [' |', ' /', ' -', ' \\']
+        c: list = [' |', ' /', ' -', ' \\']
         self.charId += 1
         if not(self.charId < len(c)):
             self.charId = 0
-        txt = self.currentTxt + c[self.charId]
+        txt: str = self.currentTxt + c[self.charId]
         self.lblProgressBar.setText(txt)
         self.lblProgressBar.repaint()
 
@@ -90,6 +89,12 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.lblScannStatus.setText(txt)
         self.lblScannStatus.repaint()
 
+    def setBtnsEnabled(self, isEnable: bool):
+        self.btnScannFolder.setEnabled(isEnable)
+        self.btnStart.setEnabled(isEnable)
+        self.btnSave.setEnabled(isEnable)
+        self.btnVIC.setEnabled(isEnable)
+
     def nsfw_finish(self, media):
         try:
             if((media) and (not self.nsfw.isCanceled)):
@@ -110,12 +115,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             else:
                 self.setStatus(Message('Proceso Cancelado!', False, DANGER))
         finally:
-            isEnable = True
-            self.isInScann = False
-            self.btnScannFolder.setEnabled(isEnable)
-            self.btnStart.setEnabled(isEnable)
-            self.btnSave.setEnabled(isEnable)
-            self.btnVIC.setEnabled(isEnable)
+            self.setBtnsEnabled(True)
 
     def btnClose_Click(self):
         if(self.isInScann):
@@ -127,12 +127,8 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
                 self.nsfw.stop()
             if(self.imgFinder):
                 self.imgFinder.stop()
-            isEnable = True
             self.isInScann = False
-            self.btnScannFolder.setEnabled(isEnable)
-            self.btnStart.setEnabled(isEnable)
-            self.btnSave.setEnabled(isEnable)
-            self.btnVIC.setEnabled(isEnable)
+            self.setBtnsEnabled(True)
         else:
             self.close()
 
@@ -150,11 +146,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.txtLog.clear()
         self.btnAceptar.setEnabled(False)
         self.isInScann = True
-        isEnable = False
-        self.btnScannFolder.setEnabled(isEnable)
-        self.btnStart.setEnabled(isEnable)
-        self.btnSave.setEnabled(isEnable)
-        self.btnVIC.setEnabled(isEnable)
+        self.setBtnsEnabled(False)
         if(self.scannFolder):
             self.VIC = genNewVic()
             self.scannFolder_Start()
