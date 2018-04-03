@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1001</width>
-    <height>613</height>
+    <height>628</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -74,10 +74,16 @@
         <widget class="QWidget" name="layoutWidget">
          <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
           <property name="sizeConstraint">
-           <enum>QLayout::SetDefaultConstraint</enum>
+           <enum>QLayout::SetFixedSize</enum>
           </property>
           <item alignment="Qt::AlignLeft">
            <widget class="QToolButton" name="btnScannFolder">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
               <width>50</width>
@@ -163,10 +169,19 @@
         </widget>
         <widget class="QWidget" name="layoutWidget">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetFixedSize</enum>
+          </property>
           <item>
            <widget class="QToolButton" name="btnSave">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="minimumSize">
              <size>

@@ -163,16 +163,196 @@ class NsfwScann(QtCore.QThread):
         self.finish.emit(self.media)
 
 
+class NsfwScannManager(QtCore.QObject):
+
+    mutex: QtCore.QMutex = QtCore.QMutex()
+    # Model
+    model = None
+    weight_file = 'model/max_open_nsfw.h5'
+    model_file = 'model/max_open_nsfw.json'
+    # Signals
+    sendMinScore: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
+    stopAll: QtCore.pyqtSignal = QtCore.pyqtSignal()
+    status = QtCore.pyqtSignal(Message)
+    statusBar = QtCore.pyqtSignal(str)
+    progressMax = QtCore.pyqtSignal(int)
+    progress = QtCore.pyqtSignal(int)
+    finish = QtCore.pyqtSignal(object)
+    # Thread Vars
+    runThreads: list = []
+    maxThreads: int = 1 #QtCore.QThread.idealThreadCount()
+    basePath: str = ''
+    # Process Stats Vars
+    tInicio: int
+    tInicioScann: int
+    isCanceled: bool = False
+    minScore: float = 0
+    totalFiles: int = 0
+    filesScanned: int = 0
+    filesImage: int = 0
+    filesImageNsfw: int = 0
+    filesNoImage: int = 0
+    # medida
+    media: list = []
+
+    def __init__(self, parent: QtCore.QObject):
+        super().__init__(parent)
+
+    @QtCore.pyqtSlot()
+    def setFilesScanned(self):
+        _ = QtCore.QMutexLocker(self.mutex)
+        self.filesScanned += 1
+        self.__emitStatusBar()
+
+    @QtCore.pyqtSlot()
+    def setFilesImage(self):
+        _ = QtCore.QMutexLocker(self.mutex)
+        self.filesImage += 1
+        
+
+    @QtCore.pyqtSlot()
+    def setFilesImageNsfw(self):
+        _ = QtCore.QMutexLocker(self.mutex)
+        self.filesImageNsfw += 1
+
+    @QtCore.pyqtSlot()
+    def setFilesNoImage(self):
+        _ = QtCore.QMutexLocker(self.mutex)
+        self.filesNoImage += 1
+
+    @QtCore.pyqtSlot(int)
+    def setMinScore(self, score):
+        _ = QtCore.QMutexLocker(self.mutex)
+        self.minScore = score / 100
+        self.sendMinScore.emit(score)
+
+    @QtCore.pyqtSlot()
+    def stop(self):
+        _ = QtCore.QMutexLocker(self.mutex)
+        self.isCanceled = True
+        self.stopAll.emit()
+        self.status.emit(Message('Proceso Cancelado!', False, DANGER, True))
+        self.finish.emit(None)
+
+    def __emitStatusBar(self):
+        _ = QtCore.QMutexLocker(self.mutex)
+        ct = time()
+        ett = ct - self.tInicio
+        strTT = secondsToHMS(ett)
+        et = ct - self.tInicioScann
+        strTP = secondsToHMS(et)
+        fs = self.filesScanned / et
+        eta = (self.totalFiles - self.filesScanned) / (fs if fs else 1)
+        strEta = secondsToHMS(eta)
+        data = (self.filesScanned, self.totalFiles, self.filesImageNsfw,
+                self.filesImage, self.filesNoImage, strTT, strTP, strEta, fs, len(self.runThreads), self.maxThreads)
+        txt = 'A: %d de %d | Nsfw: %d de %d | NoImg: %d | TT: %s | TP: %s | ETA: %s @ %.2f A/seg | W: %d de %d' % data
+        self.statusBar.emit(txt)
+
+    # def __loadModel(self):
+    #     self.progressMax.emit(0)
+    #     self.status.emit(Message('Cargando Backend Tensorflow...', True))
+    #     from keras import backend as K
+    #     from keras.models import model_from_json
+    #     self.status.emit(Message('Backend Tensorflow Cargado!'))
+    #     try:
+    #        # K.clear_session()
+    #         K.get_session()
+    #         self.status.emit(Message('Cargando Modelo...', True))
+    #         json_file = open(self.model_file, 'r')
+    #         loaded_model_json = json_file.read()
+    #         self.status.emit(Message('Modelo Cargado!'))
+    #         self.status.emit(Message('Configurando Modelo...', True))
+    #         model = model_from_json(loaded_model_json)
+    #         model.load_weights(self.weight_file)
+    #         self.status.emit(Message('Modelo Configurado!'))
+    #         return model
+    #     except(FileNotFoundError):
+    #         raise FileNotFoundError(
+    #             'No se encontraron los archivos del Modelo!')
+    #     finally:
+    #         if json_file:
+    #             json_file.close()
+
+    def __createWorker(self, media: list):
+        # TODO Agregar control de Errores
+        worker: NsfwScannManager = NsfwScannWorker(self, self.model)
+        worker.status.connect(self.status)
+        worker.fileScanned.connect(self.setFilesScanned)
+        worker.fileImage.connect(self.setFilesImage)
+        worker.fileImageNsfw.connect(self.setFilesImageNsfw)
+        worker.fileNoImage.connect(self.setFilesNoImage)
+        worker.finish.connect(self.__worker_finish)
+        worker.setMinScore(int(self.minScore * 100))
+        worker.scann(media, self.basePath)
+        self.runThreads.append(worker)
+        return True
+
+    def __worker_finish(self, worker: QtCore.QThread, subMedia: list):
+        _ = QtCore.QMutexLocker(self.mutex)
+        self.media.extend(subMedia)
+        self.runThreads.remove(worker)
+        if(not len(self.runThreads))and(not self.isCanceled):
+            self.finish.emit(self.media)
+
+    def start(self, inMedia: list, tInicio: int, basePath: str):
+        # Chequear que media contenga items
+        self.tInicio = tInicio
+        self.basePath = basePath
+        self.totalFiles = len(inMedia)
+        if(not self.totalFiles):
+            return
+        # Cargar modelo
+        # if(not self.model):
+        #     self.model = self.__loadModel()
+        # Set contadores to 0
+        self.totalFiles = 0
+        self.filesScanned = 0
+        self.filesImage = 0
+        self.filesImageNsfw = 0
+        self.filesNoImage = 0
+        # Dividir media para los workers
+        mediasForWorkers: list = []
+        mediasInItem: int = round(len(inMedia) / self.maxThreads)
+        for w in range(self.maxThreads):
+            self.status.emit(Message('Configurando Worker %d de %d...' % (
+                w, self.maxThreads), True, NORMAL, False))
+            self.progressMax.emit(mediasInItem)
+            itemCount: int = 0
+            subMedia: list = []
+            for m in inMedia:
+                if(itemCount < mediasInItem):
+                    subMedia.append(m)
+                    inMedia.remove(m)
+                    itemCount += 1
+                    self.progress.emit(itemCount)
+                else:
+                    break
+            mediasForWorkers.append(subMedia)
+        mediasForWorkers[0].extend(inMedia)
+        # Crear workers
+        self.tInicioScann = time()
+        _ = QtCore.QMutexLocker(self.mutex)
+        for mw in mediasForWorkers:
+            if(not self.__createWorker(mw)):
+                self.status.emit(
+                    Message('Error al crear Workers!', False, DANGER, True))
+        for worker in self.runThreads:
+            worker.iniciar()
+
+
 class NsfwScannWorker(QtCore.QThread):
     # Model
-    model: object = None
+    model = None
+    weight_file = 'model/max_open_nsfw.h5'
+    model_file = 'model/max_open_nsfw.json'
    # Signals
     status: QtCore.pyqtSignal = QtCore.pyqtSignal(Message)
     fileScanned: QtCore.pyqtSignal = QtCore.pyqtSignal()
     fileImage: QtCore.pyqtSignal = QtCore.pyqtSignal()
     fileImageNsfw: QtCore.pyqtSignal = QtCore.pyqtSignal()
     fileNoImage: QtCore.pyqtSignal = QtCore.pyqtSignal()
-    finish: QtCore.pyqtSignal = QtCore.pyqtSignal(QtCore.QThread ,list)
+    finish: QtCore.pyqtSignal = QtCore.pyqtSignal(QtCore.QThread, list)
 
     # Scann Vars
     media: list = []
@@ -180,9 +360,11 @@ class NsfwScannWorker(QtCore.QThread):
     basePath: str = ''
     minScore: float = 0
 
-    def __init__(self, parent: QtCore.QObject, model: object):
+    def __init__(self, parent: NsfwScannManager, model: object):
         super().__init__(parent)
         self.model = model
+        parent.stopAll.connect(self.stop)
+        parent.sendMinScore.connect(self.setMinScore)
 
     @QtCore.pyqtSlot(int)
     def setMinScore(self, score):
@@ -204,12 +386,40 @@ class NsfwScannWorker(QtCore.QThread):
             x = preprocess_input(x)
             preds = self.model.predict(x)
             return preds[0][1]
-        except:
+        except (ValueError, OSError, SyntaxError):
             return -1
+
+    def __loadModel(self):
+        self.status.emit(Message('Cargando Backend Tensorflow...', True))
+        from keras import backend as K
+        from keras.models import model_from_json
+        self.status.emit(Message('Backend Tensorflow Cargado!'))
+        try:
+           # K.clear_session()
+            K.get_session()
+            self.status.emit(Message('Cargando Modelo...', True))
+            json_file = open(self.model_file, 'r')
+            loaded_model_json = json_file.read()
+            self.status.emit(Message('Modelo Cargado!'))
+            self.status.emit(Message('Configurando Modelo...', True))
+            model = model_from_json(loaded_model_json)
+            model.load_weights(self.weight_file)
+            self.status.emit(Message('Modelo Configurado!'))
+            return model
+        except(FileNotFoundError):
+            raise FileNotFoundError(
+                'No se encontraron los archivos del Modelo!')
+        finally:
+            if json_file:
+                json_file.close()
 
     def scann(self, media: list, basePath: str):
         self.media = media
         self.basePath = basePath
+        
+    def iniciar(self):
+        if(not self.model):
+            self.model = self.__loadModel()    
         self.start()
 
     def run(self):
@@ -242,152 +452,4 @@ class NsfwScannWorker(QtCore.QThread):
             self.status.emit(msg)
             self.fileScanned.emit()
         if(not self.isCanceled):
-            self.status.emit(Message('Escaneo Terminado!', False))
-        self.finish.emit(self, self.media)
-
-
-class NsfwScannManager(QtCore.QObject):
-
-    mutex: QtCore.QMutex = QtCore.QMutex()
-    # Model
-    model = None
-    weight_file = 'model/max_open_nsfw.h5'
-    model_file = 'model/max_open_nsfw.json'
-    # Signals
-    status = QtCore.pyqtSignal(Message)
-    statusBar = QtCore.pyqtSignal(str)
-    progressMax = QtCore.pyqtSignal(int)
-    progress = QtCore.pyqtSignal(int)
-    finish = QtCore.pyqtSignal(object)
-    # Thread Vars
-    runThreads: list = []
-    maxThreads: int = QtCore.QThread.idealThreadCount()
-    # Process Stats Vars
-    tInicio: int
-    tInicioScann: int
-    totalFiles:int = 0
-    filesScanned: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
-    filesImage: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
-    filesImageNsfw: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
-    filesNoImage: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
-    # medida
-    media: list = []
-
-    def __init__(self, parent: QtCore.QObject, tInicio:int):
-        super().__init__(parent)
-        self.tInicio = tInicio
-    
-    @QtCore.pyqtSlot()
-    def setFilesScanned(self):
-        self.filesScanned += 1
-        self.__emitStatusBar()
-    
-    @QtCore.pyqtSlot()
-    def setFilesImage(self):
-        self.filesImage += 1
-        self.__emitStatusBar()
-
-    @QtCore.pyqtSlot()
-    def setFilesImageNsfw(self):
-        self.filesImageNsfw += 1
-        self.__emitStatusBar()
-
-    @QtCore.pyqtSlot()
-    def setFilesNoImage(self):
-        self.filesNoImage += 1
-        self.__emitStatusBar()
-
-    def __emitStatusBar(self):
-        ct = time()
-        ett = ct - self.tInicio
-        strTT = secondsToHMS(ett)
-        et = ct - self.tInicioScann
-        strTP = secondsToHMS(et)
-        fs = self.filesScanned / et
-        eta = (self.totalFiles - self.filesScanned) / (fs if fs else 1)
-        strEta = secondsToHMS(eta)
-        data = (self.filesScanned, self.totalFiles, self.filesImageNsfw,
-                self.filesImage, self.filesNoImage, strTT, strTP, strEta, fs,len(self.runThreads), self.maxThreads)
-        txt = 'A: %d de %d | Nsfw: %d de %d | NoImg: %d | TT: %s | TP: %s | ETA: %s @ %.2f A/seg | W: %d de %d' % data
-        self.statusBar.emit(txt)
-      
-
-    def __loadModel(self):
-        self.progressMax.emit(0)
-        self.status.emit(Message('Cargando Backend Tensorflow...', True))
-        from keras import backend as K
-        from keras.models import model_from_json
-        self.status.emit(Message('Backend Tensorflow Cargado!'))
-        try:
-            K.clear_session()
-            self.status.emit(Message('Cargando Modelo...', True))
-            json_file = open(self.model_file, 'r')
-            loaded_model_json = json_file.read()
-            self.status.emit(Message('Modelo Cargado!'))
-            self.status.emit(Message('Configurando Modelo...', True))
-            model = model_from_json(loaded_model_json)
-            model.load_weights(self.weight_file)
-            self.status.emit(Message('Modelo Configurado!'))
-            return model
-        except(FileNotFoundError):
-            raise FileNotFoundError(
-                'No se encontraron los archivos del Modelo!')
-        finally:
-            if json_file:
-                json_file.close()
-
-    def __createWorker(self, media: list):
-        # TODO Agregar control de Errores
-        _ = QtCore.QMutexLocker(self.mutex)
-        worker: NsfwScannManager = NsfwScannWorker(self, self.model)
-        worker.status.connect(self.status)
-        worker.fileScanned.connect(self.setFilesScanned)
-        worker.fileImage.connect(self.setFilesImage)
-        worker.fileImageNsfw.connect(self.setFilesImageNsfw)
-        worker.fileNoImage.connect(self.setFilesNoImage)
-        worker.finish.connect(self.__worker_finish)
-        self.runThreads.append(worker)
-        worker.scann(media, self.basePath)
-        return True
-
-    def __worker_finish(self, worker: QtCore.QThread, subMedia: list):
-        _ = QtCore.QMutexLocker(self.mutex)
-        self.media.extend(subMedia)
-        self.runThreads.remove(worker)
-        if(not len(self.runThreads)):
-            self.finish.emit(self.media)
-
-    def start(self, inMedia: list):
-        # Chequear que media contenga items
-        self.totalFiles = len(inMedia)
-        if(not self.totalFiles):
-            return
-        # Cargar modelo
-        if(not self.model):
-            self.__loadModel()
-        # Dividir media para los workers
-        mediasForWorkers: list = []
-        mediasInItem: int = abs(len(inMedia) / self.maxThreads)
-        for w in range(self.maxThreads):
-            self.status.emit(Message('Configurando Worker %d de %d...'%(w,self.maxThreads),True, NORMAL,False))
-            self.progressMax.emit(mediasInItem)
-            itemCount: int = 0
-            subMedia: list = []
-            for m in inMedia:
-                if(itemCount < mediasInItem):
-                    subMedia.append(m)
-                    inMedia.remove(m)
-                    itemCount += 1
-                    self.progress.emit(itemCount)
-                else:
-                    break
-            mediasForWorkers.append(subMedia)
-        mediasForWorkers[0].extend(inMedia)
-        # Crear workers
-        self.tInicioScann = time()
-        _=QtCore.QMutexLocker(self.mutex)
-        for mw in mediasForWorkers:
-            if(not self.__createWorker(mw)):
-                self.status.emit(Message('Error al crear Workers!',False,DANGER,True))
-
-    
+            self.finish.emit(self, self.media)
