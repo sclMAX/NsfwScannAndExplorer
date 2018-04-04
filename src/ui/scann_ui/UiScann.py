@@ -111,9 +111,11 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
                 self.setStatus(Message('Log Guardado en: %s' %
                                        (logFilePath), False))
                 self.isScannFinish = True
-                self.btnAceptar.setEnabled(True)
+                self.isInScann = False
+                self.btnAceptar.setEnabled(True)                
             else:
                 self.setStatus(Message('Proceso Cancelado!', False, DANGER))
+                self.isInScann = False
         finally:
             self.setBtnsEnabled(True)
 

@@ -68,7 +68,7 @@ class NsfwScann(QtCore.QThread):
             self.model.setInput(inputblob)
             preds = self.model.forward()
             return preds[0][1]
-        except (ValueError, SyntaxError, OSError):
+        except (ValueError, SyntaxError, OSError, TypeError):
             return -1
 
     def emitStatus(self):
