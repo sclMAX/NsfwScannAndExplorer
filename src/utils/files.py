@@ -49,7 +49,7 @@ class ImagesFinder(QtCore.QThread):
 
     def emitStatusBar(self):
         et: int = time() - self.tInico
-        fs: float = self.totalFiles / et
+        fs: float = self.totalFiles / et if(et > 0) else 1
         txt: str = 'I: %d de A: %d | T: %s @ %.2f A/Seg' % (
             self.totalImages, self.totalFiles, secondsToHMS(et), fs)
         self.statusBar.emit(txt)

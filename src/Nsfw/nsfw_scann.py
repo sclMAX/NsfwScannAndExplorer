@@ -1,6 +1,6 @@
 from PyQt5 import QtCore
 from src.utils.message import Message, NORMAL, WARNING, DANGER
-from src.Nsfw.vic13 import updateMediaItem, isVICValid, getMediaFormVIC
+from src.Nsfw.vic13 import updateMediaItem, isVICValid, getMediaFormVIC, getVicCaseData
 from pathlib import Path
 from time import time
 from src.utils.formats import secondsToHMS
@@ -95,6 +95,7 @@ class NsfwScann(QtCore.QThread):
         if(isVICValid(VIC)):
             self.media = getMediaFormVIC(VIC)
             if(self.media):
+                self.status.emit(Message(getVicCaseData(VIC)))
                 self.basePath = basePath
                 self.start()
             else:
@@ -146,6 +147,9 @@ class NsfwScann(QtCore.QThread):
             self.progress.emit(self.currentFile)
             self.emitStatus()
 
-        if(not self.isCanceled):
+        if(not self.isCanceled):            
             self.status.emit(Message('Escaneo Terminado!', False))
+            self.status.emit(Message('Total de Archivos: %d'%(self.totalFiles)))
+            self.status.emit(Message('Tiempo Total: %s'%(secondsToHMS(time() - self.ti))))
+            self.status.emit(Message('Promedio por Archivo: %.4f mseg.'%(((time() - self.tip)* 1000)/self.totalFiles)))
         self.finish.emit(self.media)
