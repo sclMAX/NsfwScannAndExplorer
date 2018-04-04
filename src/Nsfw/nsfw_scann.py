@@ -67,19 +67,20 @@ class NsfwScann(QtCore.QThread):
         finally:
             if json_file:
                 json_file.close()
-
+   
     def isPorno(self, img_path):
         from keras.preprocessing import image
         import numpy as np
         from keras.applications.imagenet_utils import preprocess_input
         try:
-            img = image.load_img(img_path, target_size=(224, 224))
+            img = image.load_img(img_path, target_size=(
+                224, 224), interpolation='bicubic')
             x = image.img_to_array(img)
             x = np.expand_dims(x, axis=0)
-            x = preprocess_input(x)
+            x = preprocess_input(x, mode='caffe')
             preds = self.model.predict(x)
             return preds[0][1]
-        except:
+        except (ValueError, SyntaxError, OSError):
             return -1
 
     def emitStatus(self):
