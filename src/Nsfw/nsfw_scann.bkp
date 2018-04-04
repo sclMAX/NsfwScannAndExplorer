@@ -4,14 +4,13 @@ from src.Nsfw.vic13 import updateMediaItem, isVICValid, getMediaFormVIC
 from pathlib import Path
 from time import time
 from src.utils.formats import secondsToHMS
-import cv2 as cv
 
 
 class NsfwScann(QtCore.QThread):
     # Model
     model = None
-    weight_file: str = 'model/resnet_50_1by2_nsfw.caffemodel'
-    model_file: str = 'model/deploy.prototxt'
+    weight_file: str = 'model/max_open_nsfw.h5'
+    model_file: str = 'model/max_open_nsfw.json'
     # Signals
     status: QtCore.pyqtSignal = QtCore.pyqtSignal(Message)
     statusBar: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
@@ -45,28 +44,41 @@ class NsfwScann(QtCore.QThread):
         self.isCanceled = True
         self.exit()
 
-    def __loadModel(self):
+    def loadModel(self):
+        self.progressMax.emit(0)
+        self.status.emit(Message('Cargando Backend Tensorflow...', True))
+        from keras import backend as K
+        from keras.models import model_from_json
+        self.status.emit(Message('Backend Tensorflow Cargado!'))
         try:
+            K.clear_session()
             self.status.emit(Message('Cargando Modelo...', True))
-            from keras.preprocessing import image
-            model = cv.dnn.readNetFromCaffe(
-                prototxt=self.model_file, caffeModel=self.weight_file)
-            self.status.emit(Message('Modelo Cargado!', False))
+            json_file = open(self.model_file, 'r')
+            loaded_model_json = json_file.read()
+            self.status.emit(Message('Modelo Cargado!'))
+            self.status.emit(Message('Configurando Modelo...', True))
+            model = model_from_json(loaded_model_json)
+            model.load_weights(self.weight_file)
+            self.status.emit(Message('Modelo Configurado!'))
             return model
         except(FileNotFoundError):
-            self.status.emit(
-                Message('No se encontraron los archivos del Modelo!', False, DANGER))
-            self.stop()
-
+            raise FileNotFoundError(
+                'No se encontraron los archivos del Modelo!')
+        finally:
+            if json_file:
+                json_file.close()
+   
     def isPorno(self, img_path):
         from keras.preprocessing import image
+        import numpy as np
+        from keras.applications.imagenet_utils import preprocess_input
         try:
-            img = image.load_img(img_path, target_size=(256, 256))
+            img = image.load_img(img_path, target_size=(
+                224, 224), interpolation='bicubic')
             x = image.img_to_array(img)
-            inputblob = cv.dnn.blobFromImage(
-                x, 1., (224, 224), (104, 117, 123), False, False)
-            self.model.setInput(inputblob)
-            preds = self.model.forward()
+            x = np.expand_dims(x, axis=0)
+            x = preprocess_input(x, mode='caffe')
+            preds = self.model.predict(x)
             return preds[0][1]
         except (ValueError, SyntaxError, OSError):
             return -1
@@ -107,7 +119,7 @@ class NsfwScann(QtCore.QThread):
     def run(self):
         self.isCanceled = False
         if(not self.model):
-            self.model = self.__loadModel()
+            self.model = self.loadModel()
         self.totalFiles = len(self.media)
         self.progressMax.emit(self.totalFiles)
         self.currentFile = 0
