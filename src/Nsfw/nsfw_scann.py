@@ -1,10 +1,11 @@
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from src.utils.message import Message, NORMAL, WARNING, DANGER
 from src.Nsfw.vic13 import updateMediaItem, isVICValid, getMediaFormVIC, getVicCaseData
 from pathlib import Path
 from time import time
 from src.utils.formats import secondsToHMS
 import cv2 as cv
+import fleep
 
 
 class NsfwScann(QtCore.QThread):
@@ -18,6 +19,7 @@ class NsfwScann(QtCore.QThread):
     progressMax: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
     progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
     image: QtCore.pyqtSignal = QtCore.pyqtSignal(object, float)
+    video: QtCore.pyqtSignal = QtCore.pyqtSignal(QtGui.QImage, float)
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
 
     # Scann Vars
@@ -50,7 +52,8 @@ class NsfwScann(QtCore.QThread):
         try:
             self.status.emit(Message('Cargando Modelo...', True))
             from keras.preprocessing import image
-            model = cv.dnn.readNetFromCaffe(prototxt=self.model_file, caffeModel=self.weight_file)
+            model = cv.dnn.readNetFromCaffe(
+                prototxt=self.model_file, caffeModel=self.weight_file)
             self.status.emit(Message('Modelo Cargado!', False))
             return model
         except(FileNotFoundError):
@@ -58,20 +61,76 @@ class NsfwScann(QtCore.QThread):
                 Message('No se encontraron los archivos del Modelo!', False, DANGER))
             self.stop()
 
-    def isPorno(self, img_path):
+    def __getProbability(self, inputBlob):
+        self.model.setInput(inputBlob)
+        pred: float = self.model.forward()[0][1]
+        return pred
+
+    def __video_emit(self, frame, score):
+        height, width,_ = frame.shape     
+        bytesPerLine = 3 * width
+        cv.cvtColor(frame, cv.COLOR_BGR2RGB, frame)  
+        img = QtGui.QImage(frame.data, width, height, bytesPerLine,QtGui.QImage.Format_RGB888) 
+        self.video.emit(img, score)
+
+    def __scannVideo(self, file):
+        from PIL import Image
+        try:
+            maxScore = 0
+            cap = cv.VideoCapture(file)
+            fps = cap.get(cv.CAP_PROP_FPS)
+            fcount = cap.get(cv.CAP_PROP_FRAME_COUNT)
+            frameToRead = 0
+            while(cap.isOpened()):
+                frameToRead += fps
+                if not(frameToRead <= fcount):
+                    frameToRead = fcount
+                cap.set(1, frameToRead - 1)
+                ok, frame = cap.read()
+                frame = cv.resize(frame, (256, 256))
+                if(ok == True):
+                    pi = Image.fromarray(frame)
+                    score, _ = self.__scannImage(pi, False)
+                    self.__video_emit(frame, score)
+                    if(score > maxScore):
+                        maxScore = score
+                    self.status.emit(Message('Video Escaneado %.4f' % maxScore,True,NORMAL,False))
+                    if(frameToRead == fcount):
+                        break
+                else:
+                    break
+           
+            return maxScore
+        finally:
+            cap.release()
+
+    def __scannImage(self, img, isFile=True):
         from keras.preprocessing import image
         try:
-            img = image.load_img(img_path, target_size=(256, 256))
-            x = image.img_to_array(img)
+            if(isFile):
+                img = image.load_img(img, target_size=(256, 256))
+            img_na = image.img_to_array(img)
             inputblob = cv.dnn.blobFromImage(
-                x, 1., (224, 224), (104, 117, 123), False, False)
-            self.model.setInput(inputblob)
-            preds = self.model.forward()
-            if(preds[0][1] >= self.minScore):
-                self.image.emit(img, preds[0][1])
-            return preds[0][1]
+                img_na, 1., (224, 224), (104, 117, 123), False, False)
+            return (self.__getProbability(inputblob), img)
         except (ValueError, SyntaxError, OSError, TypeError):
-            return -1
+            return (-1, None)
+
+    def isPorno(self, file_path: str, file_type: str):
+        try:
+            if(not file_type):
+                with open(file_path, "rb") as file:
+                    fileInfo = fleep.get(file.read(128))
+                file_type = fileInfo.type
+        except:
+            file_type = 'None'
+        if('video' in file_type):
+            probability = self.__scannVideo(file_path)
+        else:
+            probability, img = self.__scannImage(file_path, True)
+            if((probability >= self.minScore)and(img)):
+                self.image.emit(img, probability)
+        return probability
 
     def emitStatus(self):
         ct: int = time()
@@ -122,12 +181,13 @@ class NsfwScann(QtCore.QThread):
             if(self.isCanceled):
                 break
             img_path = str(m['RelativeFilePath']).replace('\\', '/')
+            file_type = str(m.get('FileType'))
             self.status.emit(
                 Message('Escanenado: ' + img_path, False, NORMAL, False))
             img_path = Path(img_path)
             if(self.basePath):
                 img_path = Path(self.basePath).joinpath(img_path)
-            score = self.isPorno(str(img_path))
+            score = self.isPorno(str(img_path), file_type)
             if(score >= self.minScore):
                 msg = Message('SI %2.4f - %s' %
                               (score, img_path), False, NORMAL)
@@ -149,9 +209,12 @@ class NsfwScann(QtCore.QThread):
             self.progress.emit(self.currentFile)
             self.emitStatus()
 
-        if(not self.isCanceled):            
+        if(not self.isCanceled):
             self.status.emit(Message('Escaneo Terminado!', False))
-            self.status.emit(Message('Total de Archivos: %d'%(self.totalFiles)))
-            self.status.emit(Message('Tiempo Total: %s'%(secondsToHMS(time() - self.ti))))
-            self.status.emit(Message('Promedio por Archivo: %.4f mseg.'%(((time() - self.tip)* 1000)/self.totalFiles)))
+            self.status.emit(Message('Total de Archivos: %d' %
+                                     (self.totalFiles)))
+            self.status.emit(Message('Tiempo Total: %s' %
+                                     (secondsToHMS(time() - self.ti))))
+            self.status.emit(Message('Promedio por Archivo: %.4f mseg.' % (
+                ((time() - self.tip) * 1000)/self.totalFiles)))
         self.finish.emit(self.media)

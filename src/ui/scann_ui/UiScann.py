@@ -36,6 +36,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.nsfw.statusBar.connect(self.setStatusBar)
         self.nsfw.status.connect(self.setStatus)
         self.nsfw.image.connect(self.mostrarImagen)
+        self.nsfw.video.connect(self.mostrarVideo)
         self.nsfw.finish.connect(self.nsfw_finish)
         self.selScore.valueChanged.connect(self.progressBarScore.setValue)
         self.progressBarScore.valueChanged.connect(self.nsfw.setMinScore)
@@ -114,6 +115,12 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         else:
             self.frameImage.setVisible(False)
 
+    def mostrarVideo(self, frame:QtGui.QImage, score):   
+        pix = QtGui.QPixmap.fromImage(frame)
+        self.imageScore.setValue(score * 100)
+        self.lblImage.setPixmap(pix)
+        self.frameImage.repaint()
+
     def setBtnsEnabled(self, isEnable: bool):
         self.btnScannFolder.setEnabled(isEnable)
         self.btnStart.setEnabled(isEnable)
@@ -125,11 +132,11 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             if((media) and (not self.nsfw.isCanceled)):
                 updateMedia(self.VIC, media)
                 import json
-                self.setStatus(Message('Guardando Reporte..', True))
+                self.setStatus(Message('Guardando Reporte..', True, NORMAL, False))
                 json.dump(self.VIC, open(self.saveFile, 'w'))
                 self.setStatus(Message('Reporte Guardado en: %s' %
                                        (self.saveFile), False))
-                self.setStatus(Message('Guardando Log..', True))
+                self.setStatus(Message('Guardando Log..', True,NORMAL,False))
                 logFilePath = Path(self.saveFolder).joinpath('log.txt')
                 with open(str(logFilePath), 'w') as logFile:
                     logFile.write(str(self.txtLog.toPlainText()))

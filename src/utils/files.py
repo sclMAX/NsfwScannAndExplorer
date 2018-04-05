@@ -5,6 +5,7 @@ from src.utils.message import Message, NORMAL, DANGER, WARNING
 from src.utils.formats import secondsToHMS
 from src.Nsfw.vic13 import genNewMediaItem, updateMediaItem
 from time import time
+import fleep
 
 
 def searching_all_files(path: Path):
@@ -17,7 +18,6 @@ def searching_all_files(path: Path):
         elif x.is_dir():
             file_list.extend(searching_all_files(str(x)))
     return file_list
-
 
 class ImagesFinder(QtCore.QThread):
     findPath: str = ''
@@ -54,6 +54,20 @@ class ImagesFinder(QtCore.QThread):
             self.totalImages, self.totalFiles, secondsToHMS(et), fs)
         self.statusBar.emit(txt)
 
+    def __isValidFile(self, file: str):
+        try:
+            validTypes = ['raster-image', 'raw-image', 'vector-image', 'video']
+            with open(file, "rb") as file:
+                fileInfo = fleep.get(file.read(128))
+            filetype = fileInfo.type
+            if(filetype):
+                for t in validTypes:
+                    if(t in filetype):
+                        return t
+            return None
+        except: 
+            return None
+
     def __findImages(self, path: str):
         dirpath = Path(path)
         assert(dirpath.is_dir())
@@ -64,7 +78,7 @@ class ImagesFinder(QtCore.QThread):
             if x.is_file():
                 try:
                     self.totalFiles += 1
-                    fileType = what(x)
+                    fileType = self.__isValidFile(x)
                     if(not fileType):
                         continue
                     self.totalImages += 1
@@ -96,7 +110,7 @@ class ImagesFinder(QtCore.QThread):
                 updateMediaItem(mediaItem, {
                     'MediaID': count,
                     'RelativeFilePath': str(f['file']),
-                    'ImageType': str(f['type'])
+                    'FileType': str(f['type'])
                 })
                 media.append(mediaItem)
                 count += 1
@@ -105,4 +119,4 @@ class ImagesFinder(QtCore.QThread):
         else:
             self.status.emit(Message(
                 'No se encontraron Imagenes en el Directorio seleccionado!', False, WARNING))
-            self.finish.emit(None)
+            self.finish.emit([])
