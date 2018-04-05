@@ -28,6 +28,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         super().__init__(parent)
         self.setupUi(self)
         self.showProsess(False)
+        self.frameImage.setVisible(False)
         self.resize(self.groupBox.size())
         self.nsfw = NsfwScann(self)
         self.nsfw.progressMax.connect(self.progressBar.setMaximum)
@@ -45,6 +46,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.btnScannFolder.clicked.connect(self.btnScannFolder_Click)
         self.btnVIC.clicked.connect(self.btnVIC_Click)
         self.btnSave.clicked.connect(self.btnSave_Click)
+        self.chkShowImage.stateChanged.connect(self.showImage)
 
     def showProsess(self, isShow=False):
         self.progressBar.setVisible(isShow)
@@ -53,6 +55,12 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.txtLog.setVisible(isShow)
         self.frame.setVisible(isShow)
         self.repaint()
+
+    def showImage(self, isChequed):
+        if(self.chkShowImage.isChecked() > 0):
+            self.frameImage.setVisible(True)
+        else:
+            self.frameImage.setVisible(False)
 
     def timerTimeOut(self):
         c: list = [' |', ' /', ' -', ' \\']
@@ -89,13 +97,22 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
     def setStatusBar(self, txt):
         self.lblScannStatus.setText(txt)
         self.lblScannStatus.repaint()
-    
-    def mostrarImagen(self, image):
-        data = image.tobytes('raw', 'RGBA')
-        img = QtGui.QImage(data, image.size[0], image.size[1], QtGui.QImage.Format_ARGB32)
-        pix = QtGui.QPixmap.fromImage(img)
-        self.lblImage.setPixmap(pix)
-        self.lblImage.repaint()
+
+    def mostrarImagen(self, image, score):
+        from PIL import ImageQt
+        if(self.chkShowImage.isChecked() > 0):
+            self.frameImage.setVisible(True)
+            try:
+                img = ImageQt.ImageQt(image)
+                pix = QtGui.QPixmap.fromImage(img)
+                self.imageScore.setValue(score * 100)
+                self.lblImage.setPixmap(pix)
+                self.frameImage.repaint()
+            except:
+                print('Error Show Image!')
+                return
+        else:
+            self.frameImage.setVisible(False)
 
     def setBtnsEnabled(self, isEnable: bool):
         self.btnScannFolder.setEnabled(isEnable)
@@ -120,7 +137,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
                                        (logFilePath), False))
                 self.isScannFinish = True
                 self.isInScann = False
-                self.btnAceptar.setEnabled(True)                
+                self.btnAceptar.setEnabled(True)
             else:
                 self.setStatus(Message('Proceso Cancelado!', False, DANGER))
                 self.isInScann = False

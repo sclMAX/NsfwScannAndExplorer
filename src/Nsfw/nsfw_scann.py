@@ -17,7 +17,7 @@ class NsfwScann(QtCore.QThread):
     statusBar: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
     progressMax: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
     progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
-    image: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
+    image: QtCore.pyqtSignal = QtCore.pyqtSignal(object, float)
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
 
     # Scann Vars
@@ -62,12 +62,13 @@ class NsfwScann(QtCore.QThread):
         from keras.preprocessing import image
         try:
             img = image.load_img(img_path, target_size=(256, 256))
-            self.image.emit(img)
             x = image.img_to_array(img)
             inputblob = cv.dnn.blobFromImage(
                 x, 1., (224, 224), (104, 117, 123), False, False)
             self.model.setInput(inputblob)
             preds = self.model.forward()
+            if(preds[0][1] >= self.minScore):
+                self.image.emit(img, preds[0][1])
             return preds[0][1]
         except (ValueError, SyntaxError, OSError, TypeError):
             return -1
@@ -84,7 +85,7 @@ class NsfwScann(QtCore.QThread):
             strEta: str = secondsToHMS(eta)
             data = (self.currentFile, self.totalFiles, self.filesInReport,
                     self.imageFiles, self.noImageFile, strTT, strTP, strEta, fs)
-            txt: str = 'A: %d de %d | Img In: %d de %d | NoImg: %d | TT: %s | TP: %s | ETA: %s @ %.2f A/seg' % data
+            txt: str = 'A: %d de %d | Nsfw: %d de %d | NoImg: %d | TT: %s | TP: %s | ETA: %s @ %.2f A/seg' % data
             self.statusBar.emit(txt)
         else:
             txt: str = 'TT: %s @ %.2f A/seg' % (strTT, self.archivos / ett)
