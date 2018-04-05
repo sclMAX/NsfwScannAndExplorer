@@ -116,10 +116,18 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             self.frameImage.setVisible(False)
 
     def mostrarVideo(self, frame:QtGui.QImage, score):   
-        pix = QtGui.QPixmap.fromImage(frame)
-        self.imageScore.setValue(score * 100)
-        self.lblImage.setPixmap(pix)
-        self.frameImage.repaint()
+        if(self.chkShowImage.isChecked() > 0):
+            self.frameImage.setVisible(True)
+            try:
+                pix = QtGui.QPixmap.fromImage(frame)
+                self.imageScore.setValue(score * 100)
+                self.lblImage.setPixmap(pix)
+                self.frameImage.repaint()
+            except:
+                print('Error Show Image!')
+                return
+        else:
+            self.frameImage.setVisible(False)
 
     def setBtnsEnabled(self, isEnable: bool):
         self.btnScannFolder.setEnabled(isEnable)

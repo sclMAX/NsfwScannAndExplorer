@@ -63,6 +63,9 @@ class ImagesFinder(QtCore.QThread):
             if(filetype):
                 for t in validTypes:
                     if(t in filetype):
+                        print(fileInfo.extension)
+                        if('gif' in fileInfo.extension):
+                            t = 'video'
                         return t
             return None
         except: 

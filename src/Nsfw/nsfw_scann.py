@@ -78,12 +78,14 @@ class NsfwScann(QtCore.QThread):
         try:
             maxScore = 0
             cap = cv.VideoCapture(file)
-            fps = cap.get(cv.CAP_PROP_FPS)
-            fcount = cap.get(cv.CAP_PROP_FRAME_COUNT)
+            fps = abs(cap.get(cv.CAP_PROP_FPS))
+            fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
+            print(fps,' - ', fcount)
+            # LOS GIF PARECEN TENER FRAME COUNT INFINITO  VER ESE TEMA
             frameToRead = 0
             while(cap.isOpened()):
-                frameToRead += fps
-                if not(frameToRead <= fcount):
+                frameToRead += fps if(fps < 24) else 1
+                if not(frameToRead < fcount):
                     frameToRead = fcount
                 cap.set(1, frameToRead - 1)
                 ok, frame = cap.read()
@@ -95,7 +97,7 @@ class NsfwScann(QtCore.QThread):
                     if(score > maxScore):
                         maxScore = score
                     self.status.emit(Message('Video Escaneado %.4f' % maxScore,True,NORMAL,False))
-                    if(frameToRead == fcount):
+                    if(frameToRead >= fcount):
                         break
                 else:
                     break
@@ -118,18 +120,24 @@ class NsfwScann(QtCore.QThread):
 
     def isPorno(self, file_path: str, file_type: str):
         try:
+            file_extension = ''
             if(not file_type):
                 with open(file_path, "rb") as file:
                     fileInfo = fleep.get(file.read(128))
                 file_type = fileInfo.type
+                file_extension = fileInfo.extension
         except:
             file_type = 'None'
+            file_extension = ''
         if('video' in file_type):
             probability = self.__scannVideo(file_path)
         else:
-            probability, img = self.__scannImage(file_path, True)
-            if((probability >= self.minScore)and(img)):
-                self.image.emit(img, probability)
+            if('gif' in file_extension):
+                probability = self.__scannVideo(file_path)
+            else:
+                probability, img = self.__scannImage(file_path, True)
+                if((probability >= self.minScore)and(img)):
+                    self.image.emit(img, probability)
         return probability
 
     def emitStatus(self):
