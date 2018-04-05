@@ -17,6 +17,7 @@ class NsfwScann(QtCore.QThread):
     statusBar: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
     progressMax: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
     progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
+    image: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
 
     # Scann Vars
@@ -49,8 +50,7 @@ class NsfwScann(QtCore.QThread):
         try:
             self.status.emit(Message('Cargando Modelo...', True))
             from keras.preprocessing import image
-            model = cv.dnn.readNetFromCaffe(
-                prototxt=self.model_file, caffeModel=self.weight_file)
+            model = cv.dnn.readNetFromCaffe(prototxt=self.model_file, caffeModel=self.weight_file)
             self.status.emit(Message('Modelo Cargado!', False))
             return model
         except(FileNotFoundError):
@@ -62,6 +62,7 @@ class NsfwScann(QtCore.QThread):
         from keras.preprocessing import image
         try:
             img = image.load_img(img_path, target_size=(256, 256))
+            self.image.emit(img)
             x = image.img_to_array(img)
             inputblob = cv.dnn.blobFromImage(
                 x, 1., (224, 224), (104, 117, 123), False, False)

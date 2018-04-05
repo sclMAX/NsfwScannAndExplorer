@@ -34,6 +34,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.nsfw.progress.connect(self.progressBar.setValue)
         self.nsfw.statusBar.connect(self.setStatusBar)
         self.nsfw.status.connect(self.setStatus)
+        self.nsfw.image.connect(self.mostrarImagen)
         self.nsfw.finish.connect(self.nsfw_finish)
         self.selScore.valueChanged.connect(self.progressBarScore.setValue)
         self.progressBarScore.valueChanged.connect(self.nsfw.setMinScore)
@@ -88,6 +89,13 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
     def setStatusBar(self, txt):
         self.lblScannStatus.setText(txt)
         self.lblScannStatus.repaint()
+    
+    def mostrarImagen(self, image):
+        data = image.tobytes('raw', 'RGBA')
+        img = QtGui.QImage(data, image.size[0], image.size[1], QtGui.QImage.Format_ARGB32)
+        pix = QtGui.QPixmap.fromImage(img)
+        self.lblImage.setPixmap(pix)
+        self.lblImage.repaint()
 
     def setBtnsEnabled(self, isEnable: bool):
         self.btnScannFolder.setEnabled(isEnable)
