@@ -3,7 +3,7 @@
  <class>dlgNsfwScanner</class>
  <widget class="QDialog" name="dlgNsfwScanner">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::NonModal</enum>
   </property>
   <property name="geometry">
    <rect>
@@ -1026,6 +1026,13 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="QGroupBox" name="groupBox_3">
+        <property name="title">
+         <string>GroupBox</string>
+        </property>
+       </widget>
+      </item>
       <item alignment="Qt::AlignTop">
        <widget class="QLabel" name="lblProgressBar">
         <property name="sizePolicy">
@@ -1058,6 +1065,7 @@
      </layout>
      <zorder>progressBar</zorder>
      <zorder>lblProgressBar</zorder>
+     <zorder>groupBox_3</zorder>
     </widget>
    </item>
    <item>

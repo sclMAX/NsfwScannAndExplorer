@@ -62,7 +62,7 @@ class NsfwScann(QtCore.QThread):
                 Message('No se encontraron los archivos del Modelo!', False, DANGER))
             self.stop()
 
-    def __getProbability(self, inputBlob):
+    def __getScore(self, inputBlob):
         self.model.setInput(inputBlob)
         pred: float = self.model.forward()[0][1]
         return pred
@@ -75,10 +75,11 @@ class NsfwScann(QtCore.QThread):
                            bytesPerLine, QtGui.QImage.Format_RGB888)
         self.video.emit(img, score)
 
-    def __scannVideo(self, file):
+    def __scannVideo(self, file: str, isGif: bool=False):
         from PIL import Image
         try:
-            self.status.emit(Message('Escaneando Video...', True, NORMAL, False))
+            self.status.emit(
+                Message('Escaneando Video...', True, NORMAL, False))
             maxScore = 0
             cap = cv.VideoCapture(file)
             fps = abs(cap.get(cv.CAP_PROP_FPS))
@@ -116,7 +117,7 @@ class NsfwScann(QtCore.QThread):
             img_na = image.img_to_array(img)
             inputblob = cv.dnn.blobFromImage(
                 img_na, 1., (224, 224), (104, 117, 123), False, False)
-            return (self.__getProbability(inputblob), img)
+            return (self.__getScore(inputblob), img)
         except (ValueError, SyntaxError, OSError, TypeError):
             return (-1, None)
 
