@@ -48,10 +48,10 @@
    <property name="sizeConstraint">
     <enum>QLayout::SetDefaultConstraint</enum>
    </property>
-   <item>
+   <item alignment="Qt::AlignTop">
     <widget class="QGroupBox" name="groupBox">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -263,7 +263,7 @@
           <property name="sizeConstraint">
            <enum>QLayout::SetDefaultConstraint</enum>
           </property>
-          <item>
+          <item alignment="Qt::AlignTop">
            <widget class="QCheckBox" name="chkShowImage">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Muestra una vista previa de las imagenes que esten por sobre la Probabilidad espesificada.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -387,7 +387,7 @@
         </property>
        </spacer>
       </item>
-      <item>
+      <item alignment="Qt::AlignTop">
        <widget class="QFrame" name="frameImage">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
@@ -425,7 +425,10 @@
          </property>
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_5">
-           <item>
+           <property name="sizeConstraint">
+            <enum>QLayout::SetFixedSize</enum>
+           </property>
+           <item alignment="Qt::AlignTop">
             <widget class="QLabel" name="lblImage">
              <property name="minimumSize">
               <size>
@@ -438,7 +441,7 @@
              </property>
             </widget>
            </item>
-           <item>
+           <item alignment="Qt::AlignTop">
             <widget class="QProgressBar" name="imageScore">
              <property name="palette">
               <palette>
@@ -893,7 +896,7 @@
         <property name="sizeConstraint">
          <enum>QLayout::SetDefaultConstraint</enum>
         </property>
-        <item>
+        <item alignment="Qt::AlignTop">
          <widget class="QToolButton" name="btnStart">
           <property name="enabled">
            <bool>false</bool>
@@ -935,7 +938,7 @@
           </property>
          </spacer>
         </item>
-        <item>
+        <item alignment="Qt::AlignTop">
          <widget class="QToolButton" name="btnAceptar">
           <property name="enabled">
            <bool>false</bool>
@@ -977,7 +980,7 @@
           </property>
          </spacer>
         </item>
-        <item>
+        <item alignment="Qt::AlignTop">
          <widget class="QToolButton" name="btnClose">
           <property name="minimumSize">
            <size>

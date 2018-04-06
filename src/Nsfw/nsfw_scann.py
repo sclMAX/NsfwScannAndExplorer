@@ -80,17 +80,18 @@ class NsfwScann(QtCore.QThread):
             cap = cv.VideoCapture(file)
             fps = abs(cap.get(cv.CAP_PROP_FPS))
             fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
-            print(fps,' - ', fcount)
-            # LOS GIF PARECEN TENER FRAME COUNT INFINITO  VER ESE TEMA
+            totalSeg = fcount / fps
             frameToRead = 0
             while(cap.isOpened()):
-                frameToRead += fps if(fps < 24) else 1
+                frameToRead += fps if(fps > 10) else 1
                 if not(frameToRead < fcount):
                     frameToRead = fcount
                 cap.set(1, frameToRead - 1)
+                fin = cap.get(cv.CAP_PROP_POS_AVI_RATIO)
+                ms = cap.get(cv.CAP_PROP_POS_MSEC)
                 ok, frame = cap.read()
-                frame = cv.resize(frame, (256, 256))
-                if(ok == True):
+                if((ok == True)):
+                    frame = cv.resize(frame, (256, 256))
                     pi = Image.fromarray(frame)
                     score, _ = self.__scannImage(pi, False)
                     self.__video_emit(frame, score)
