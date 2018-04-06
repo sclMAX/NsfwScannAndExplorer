@@ -1,11 +1,11 @@
-from PyQt5 import QtCore, QtGui
-from src.utils.message import Message, NORMAL, WARNING, DANGER
-from src.Nsfw.vic13 import updateMediaItem, isVICValid, getMediaFormVIC, getVicCaseData
 from pathlib import Path
 from time import time
-from src.utils.formats import secondsToHMS
+from PyQt5 import QtCore, QtGui
 import cv2 as cv
 import fleep
+from src.utils.message import Message, NORMAL, WARNING, DANGER
+from src.Nsfw.vic13 import updateMediaItem, isVICValid, getMediaFormVIC, getVicCaseData
+from src.utils.formats import secondsToHMS
 
 
 class NsfwScann(QtCore.QThread):
@@ -52,11 +52,12 @@ class NsfwScann(QtCore.QThread):
         try:
             self.status.emit(Message('Cargando Modelo...', True))
             from keras.preprocessing import image
+            image = image
             model = cv.dnn.readNetFromCaffe(
                 prototxt=self.model_file, caffeModel=self.weight_file)
             self.status.emit(Message('Modelo Cargado!', False))
             return model
-        except(FileNotFoundError):
+        except FileNotFoundError:
             self.status.emit(
                 Message('No se encontraron los archivos del Modelo!', False, DANGER))
             self.stop()
@@ -67,10 +68,11 @@ class NsfwScann(QtCore.QThread):
         return pred
 
     def __video_emit(self, frame, score):
-        height, width,_ = frame.shape     
+        height, width, _ = frame.shape
         bytesPerLine = 3 * width
-        cv.cvtColor(frame, cv.COLOR_BGR2RGB, frame)  
-        img = QtGui.QImage(frame.data, width, height, bytesPerLine,QtGui.QImage.Format_RGB888) 
+        cv.cvtColor(frame, cv.COLOR_BGR2RGB, frame)
+        img = QtGui.QImage(frame.data, width, height,
+                           bytesPerLine, QtGui.QImage.Format_RGB888)
         self.video.emit(img, score)
 
     def __scannVideo(self, file):
@@ -80,29 +82,30 @@ class NsfwScann(QtCore.QThread):
             cap = cv.VideoCapture(file)
             fps = abs(cap.get(cv.CAP_PROP_FPS))
             fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
-            totalSeg = fcount / fps
+         #   totalSeg = fcount / fps
             frameToRead = 0
-            while(cap.isOpened()):
+            while cap.isOpened():
                 frameToRead += fps if(fps > 10) else 1
-                if not(frameToRead < fcount):
+                if not frameToRead < fcount:
                     frameToRead = fcount
                 cap.set(1, frameToRead - 1)
-                fin = cap.get(cv.CAP_PROP_POS_AVI_RATIO)
-                ms = cap.get(cv.CAP_PROP_POS_MSEC)
+                _ = cap.get(cv.CAP_PROP_POS_AVI_RATIO)
+                _ = cap.get(cv.CAP_PROP_POS_MSEC)
                 ok, frame = cap.read()
-                if((ok == True)):
+                if ok:
                     frame = cv.resize(frame, (256, 256))
                     pi = Image.fromarray(frame)
                     score, _ = self.__scannImage(pi, False)
                     self.__video_emit(frame, score)
-                    if(score > maxScore):
+                    if score > maxScore:
                         maxScore = score
-                    self.status.emit(Message('Video Escaneado %.4f' % maxScore,True,NORMAL,False))
-                    if(frameToRead >= fcount):
+                    self.status.emit(Message('Video Escaneado %.4f' %
+                                             maxScore, True, NORMAL, False))
+                    if frameToRead >= fcount:
                         break
                 else:
                     break
-           
+
             return maxScore
         finally:
             cap.release()
@@ -110,7 +113,7 @@ class NsfwScann(QtCore.QThread):
     def __scannImage(self, img, isFile=True):
         from keras.preprocessing import image
         try:
-            if(isFile):
+            if isFile:
                 img = image.load_img(img, target_size=(256, 256))
             img_na = image.img_to_array(img)
             inputblob = cv.dnn.blobFromImage(
@@ -122,18 +125,18 @@ class NsfwScann(QtCore.QThread):
     def isPorno(self, file_path: str, file_type: str):
         try:
             file_extension = ''
-            if(not file_type):
+            if not file_type:
                 with open(file_path, "rb") as file:
                     fileInfo = fleep.get(file.read(128))
                 file_type = fileInfo.type
                 file_extension = fileInfo.extension
-        except:
+        except IOError:
             file_type = 'None'
             file_extension = ''
-        if('video' in file_type):
+        if 'video' in file_type:
             probability = self.__scannVideo(file_path)
         else:
-            if('gif' in file_extension):
+            if 'gif' in file_extension:
                 probability = self.__scannVideo(file_path)
             else:
                 probability, img = self.__scannImage(file_path, True)
@@ -145,7 +148,7 @@ class NsfwScann(QtCore.QThread):
         ct: int = time()
         ett: int = ct - self.ti
         strTT: str = secondsToHMS(ett)
-        if(self.tip):
+        if self.tip:
             et: int = ct - self.tip
             strTP: str = secondsToHMS(et)
             fs: float = self.currentFile / et
@@ -153,7 +156,7 @@ class NsfwScann(QtCore.QThread):
             strEta: str = secondsToHMS(eta)
             data = (self.currentFile, self.totalFiles, self.filesInReport,
                     self.imageFiles, self.noImageFile, strTT, strTP, strEta, fs)
-            txt: str = 'A: %d de %d | Nsfw: %d de %d | NoImg: %d | TT: %s | TP: %s | ETA: %s @ %.2f A/seg' % data
+            txt = 'A: %d de %d | Nsfw: %d de %d | NoImg: %d | TT: %s | TP: %s | ETA: %s @ %.2f A/seg' % data
             self.statusBar.emit(txt)
         else:
             txt: str = 'TT: %s @ %.2f A/seg' % (strTT, self.archivos / ett)
@@ -162,9 +165,9 @@ class NsfwScann(QtCore.QThread):
     def scannVIC(self, VIC, basePath, saveFolder):
         self.ti = time()
         self.saveFolder = saveFolder
-        if(isVICValid(VIC)):
+        if isVICValid(VIC):
             self.media = getMediaFormVIC(VIC)
-            if(self.media):
+            if self.media:
                 self.status.emit(Message(getVicCaseData(VIC)))
                 self.basePath = basePath
                 self.start()
@@ -177,7 +180,7 @@ class NsfwScann(QtCore.QThread):
 
     def run(self):
         self.isCanceled = False
-        if(not self.model):
+        if not self.model:
             self.model = self.__loadModel()
         self.totalFiles = len(self.media)
         self.progressMax.emit(self.totalFiles)
@@ -187,22 +190,22 @@ class NsfwScann(QtCore.QThread):
         self.imageFiles = 0
         self.noImageFile = 0
         for m in self.media:
-            if(self.isCanceled):
+            if self.isCanceled:
                 break
             img_path = str(m['RelativeFilePath']).replace('\\', '/')
             file_type = str(m.get('FileType'))
             self.status.emit(
                 Message('Escanenado: ' + img_path, False, NORMAL, False))
             img_path = Path(img_path)
-            if(self.basePath):
+            if self.basePath:
                 img_path = Path(self.basePath).joinpath(img_path)
             score = self.isPorno(str(img_path), file_type)
-            if(score >= self.minScore):
+            if score >= self.minScore:
                 msg = Message('SI %2.4f - %s' %
                               (score, img_path), False, NORMAL)
                 self.filesInReport += 1
                 self.imageFiles += 1
-            elif (score == -1):
+            elif score == -1:
                 msg = Message('NO IMAGEN! - %s' % (img_path), False, DANGER)
                 self.noImageFile += 1
             else:
@@ -218,7 +221,7 @@ class NsfwScann(QtCore.QThread):
             self.progress.emit(self.currentFile)
             self.emitStatus()
 
-        if(not self.isCanceled):
+        if not self.isCanceled:
             self.status.emit(Message('Escaneo Terminado!', False))
             self.status.emit(Message('Total de Archivos: %d' %
                                      (self.totalFiles)))

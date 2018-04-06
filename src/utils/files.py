@@ -1,16 +1,15 @@
-from PyQt5 import QtCore
-from imghdr import what
 from pathlib import Path
+from time import time
+from PyQt5 import QtCore
+import fleep
 from src.utils.message import Message, NORMAL, DANGER, WARNING
 from src.utils.formats import secondsToHMS
 from src.Nsfw.vic13 import genNewMediaItem, updateMediaItem
-from time import time
-import fleep
 
 
 def searching_all_files(path: Path):
     dirpath = Path(path)
-    assert(dirpath.is_dir())
+    assert dirpath.is_dir()
     file_list = []
     for x in dirpath.iterdir():
         if x.is_file():
@@ -18,6 +17,7 @@ def searching_all_files(path: Path):
         elif x.is_dir():
             file_list.extend(searching_all_files(str(x)))
     return file_list
+
 
 class ImagesFinder(QtCore.QThread):
     findPath: str = ''
@@ -60,29 +60,28 @@ class ImagesFinder(QtCore.QThread):
             with open(file, "rb") as file:
                 fileInfo = fleep.get(file.read(128))
             filetype = fileInfo.type
-            if(filetype):
+            if filetype:
                 for t in validTypes:
-                    if(t in filetype):
-                        print(fileInfo.extension)
-                        if('gif' in fileInfo.extension):
+                    if t in filetype:
+                        if 'gif' in fileInfo.extension:
                             t = 'video'
                         return t
             return None
-        except: 
+        except IOError:
             return None
 
     def __findImages(self, path: str):
         dirpath = Path(path)
-        assert(dirpath.is_dir())
+        assert dirpath.is_dir()
         file_list = []
         for x in dirpath.iterdir():
-            if(not self.isRun):
+            if not self.isRun:
                 break
             if x.is_file():
                 try:
                     self.totalFiles += 1
                     fileType = self.__isValidFile(x)
-                    if(not fileType):
+                    if not fileType:
                         continue
                     self.totalImages += 1
                     file_list.append(
@@ -100,14 +99,14 @@ class ImagesFinder(QtCore.QThread):
         self.status.emit(Message('Buscando Imagenes...'))
         # Buscar imagen en directorio y subdirectorios
         fileList: list = self.__findImages(self.findPath)
-        if(len(fileList)):
+        if fileList:
             # Crear media con las imagen encontradas
             media: list = []
             count: int = 0
             self.progressMax.emit(len(fileList))
             self.status.emit(Message('Creando Media...', True))
             for f in fileList:
-                if(not self.isRun):
+                if not self.isRun:
                     break
                 mediaItem = genNewMediaItem()
                 updateMediaItem(mediaItem, {
