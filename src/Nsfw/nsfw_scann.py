@@ -78,11 +78,11 @@ class NsfwScann(QtCore.QThread):
     def __scannVideo(self, file):
         from PIL import Image
         try:
+            self.status.emit(Message('Escaneando Video...', True, NORMAL, False))
             maxScore = 0
             cap = cv.VideoCapture(file)
             fps = abs(cap.get(cv.CAP_PROP_FPS))
             fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
-         #   totalSeg = fcount / fps
             frameToRead = 0
             while cap.isOpened():
                 frameToRead += fps if(fps > 10) else 1
@@ -99,8 +99,6 @@ class NsfwScann(QtCore.QThread):
                     self.__video_emit(frame, score)
                     if score > maxScore:
                         maxScore = score
-                    self.status.emit(Message('Video Escaneado %.4f' %
-                                             maxScore, True, NORMAL, False))
                     if frameToRead >= fcount:
                         break
                 else:
@@ -193,7 +191,7 @@ class NsfwScann(QtCore.QThread):
             if self.isCanceled:
                 break
             img_path = str(m['RelativeFilePath']).replace('\\', '/')
-            file_type = str(m.get('FileType'))
+            file_type = m.get('FileType')
             self.status.emit(
                 Message('Escanenado: ' + img_path, False, NORMAL, False))
             img_path = Path(img_path)
