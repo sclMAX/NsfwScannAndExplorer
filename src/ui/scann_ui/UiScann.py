@@ -1,10 +1,10 @@
-from src.ui.scann_ui.ui_nsfw_scann import Ui_dlgNsfwScanner
-from PyQt5 import QtWidgets, QtGui, QtCore
-from src.Nsfw.nsfw_scann import NsfwScann
+from pathlib import Path
+from src.ui.scann_ui.ui_nsfw_scann import Ui_dlgNsfwScanner, QtWidgets
+from src.ui.scann_ui.nsfw_log_item import NsfwLogItem
+from src.Nsfw.nsfw_scann import NsfwScann, ImageNsfw, QtGui, QtCore
 from src.utils.message import Message, NORMAL, WARNING, DANGER
 from src.utils.files import ImagesFinder
 from src.Nsfw.vic13 import readVICFromFile, genNewVic, updateMedia
-from pathlib import Path
 
 
 class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
@@ -23,12 +23,17 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
     timer: QtCore.QTimer = QtCore.QTimer()
     charId: int = 0
     currentTxt: str = ''
+    #Nsfw Log Vars
+    nsfw_log_list: list = []
+    next_udate_item: int = 0
+    nro_items: int = 4
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
         self.showProsess(False)
-        self.frameImage.setVisible(False)
+        self.video.setVisible(False)
+        self.logImages.setVisible(False)
         self.resize(self.groupBox.size())
         self.nsfw = NsfwScann(self)
         self.nsfw.progressMax.connect(self.progressBar.setMaximum)
@@ -54,26 +59,24 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.lblScannStatus.setVisible(isShow)
         self.lblProgressBar.setVisible(isShow)
         self.txtLog.setVisible(isShow)
-        self.frame.setVisible(isShow)
         self.repaint()
 
-    def showImage(self, isChequed):
-        if(self.chkShowImage.isChecked() > 0):
-            self.frameImage.setVisible(True)
-        else:
-            self.frameImage.setVisible(False)
+    def showImage(self):
+        isShow: bool = self.chkShowImage.isChecked() > 0
+        self.logImages.setVisible(isShow)
+        self.logImages.repaint()
 
     def timerTimeOut(self):
         c: list = [' |', ' /', ' -', ' \\']
         self.charId += 1
-        if not(self.charId < len(c)):
+        if not self.charId < len(c):
             self.charId = 0
         txt: str = self.currentTxt + c[self.charId]
         self.lblProgressBar.setText(txt)
         self.lblProgressBar.repaint()
 
     def setStatus(self, msg=Message('')):
-        if(msg.isAnimate):
+        if msg.isAnimate:
             self.timer.stop()
             self.currentTxt = msg.msg
             self.timer.setInterval(100)
@@ -84,14 +87,14 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             self.lblProgressBar.setText(msg.msg)
             self.lblProgressBar.repaint()
 
-        if(msg.tipo == DANGER):
+        if msg.tipo == DANGER:
             color = QtGui.QColor('red')
-        elif (msg.tipo == WARNING):
+        elif msg.tipo == WARNING:
             color = QtGui.QColor('silver')
         else:
             color = QtGui.QColor('green')
         self.txtLog.setTextColor(color)
-        if(msg.isLog):
+        if msg.isLog:
             self.txtLog.append(msg.msg)
             self.txtLog.repaint()
 
@@ -99,35 +102,32 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.lblScannStatus.setText(txt)
         self.lblScannStatus.repaint()
 
-    def mostrarImagen(self, image, score):
-        from PIL import ImageQt
-        if(self.chkShowImage.isChecked() > 0):
-            self.frameImage.setVisible(True)
-            try:
-                img = ImageQt.ImageQt(image)
-                pix = QtGui.QPixmap.fromImage(img)
-                self.imageScore.setValue(score * 100)
-                self.lblImage.setPixmap(pix)
-                self.frameImage.repaint()
-            except:
-                print('Error Show Image!')
-                return
+    def mostrarImagen(self, img_nsfw: ImageNsfw):
+        if len(self.nsfw_log_list) < self.nro_items:
+            item = NsfwLogItem(self.logImages)
+            item.setAll(img_nsfw.file, img_nsfw.score)
+            self.nsfw_log_list.append(item)
+            self.logImagenes_hLayout.addWidget(self.nsfw_log_list[self.next_udate_item])
+            self.next_udate_item += 1
         else:
-            self.frameImage.setVisible(False)
+            self.next_udate_item += 1
+            if self.next_udate_item >= self.nro_items:
+                self.next_udate_item = 0
+            self.nsfw_log_list[self.next_udate_item].setAll(img_nsfw.file, img_nsfw.score)
+        if self.chkShowImage.isChecked() > 0:
+            if not self.logImages.isVisible():
+                self.logImages.setVisible(True)
+                self.logImages.repaint()
 
-    def mostrarVideo(self, frame:QtGui.QImage, score):   
-        if(self.chkShowImage.isChecked() > 0):
-            self.frameImage.setVisible(True)
-            try:
-                pix = QtGui.QPixmap.fromImage(frame)
-                self.imageScore.setValue(score * 100)
-                self.lblImage.setPixmap(pix)
-                self.frameImage.repaint()
-            except:
-                print('Error Show Image!')
-                return
+    def mostrarVideo(self, frame: QtGui.QImage, score):
+        if self.chkShowImage.isChecked() > 0:
+            self.video.setVisible(True)
+            pix = QtGui.QPixmap.fromImage(frame)
+            self.video_score.setValue(score * 100)
+            self.video_frame.setPixmap(pix)
+            self.video.repaint()
         else:
-            self.frameImage.setVisible(False)
+            self.video.setVisible(False)
 
     def setBtnsEnabled(self, isEnable: bool):
         self.btnScannFolder.setEnabled(isEnable)
@@ -140,11 +140,12 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             if((media) and (not self.nsfw.isCanceled)):
                 updateMedia(self.VIC, media)
                 import json
-                self.setStatus(Message('Guardando Reporte..', True, NORMAL, False))
+                self.setStatus(
+                    Message('Guardando Reporte..', True, NORMAL, False))
                 json.dump(self.VIC, open(self.saveFile, 'w'))
                 self.setStatus(Message('Reporte Guardado en: %s' %
                                        (self.saveFile), False))
-                self.setStatus(Message('Guardando Log..', True,NORMAL,False))
+                self.setStatus(Message('Guardando Log..', True, NORMAL, False))
                 logFilePath = Path(self.saveFolder).joinpath('log.txt')
                 with open(str(logFilePath), 'w') as logFile:
                     logFile.write(str(self.txtLog.toPlainText()))
@@ -160,14 +161,14 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             self.setBtnsEnabled(True)
 
     def btnClose_Click(self):
-        if(self.isInScann):
+        if self.isInScann:
             q = QtWidgets.QMessageBox.question(
                 self, 'Escaneo en Curso!', 'Desea detener en escaneo en curso?')
-            if(q == QtWidgets.QMessageBox.No):
+            if q == QtWidgets.QMessageBox.No:
                 return
-            if(self.nsfw):
+            if self.nsfw:
                 self.nsfw.stop()
-            if(self.imgFinder):
+            if self.imgFinder:
                 self.imgFinder.stop()
             self.isInScann = False
             self.setBtnsEnabled(True)
@@ -178,10 +179,10 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.accept()
 
     def btnStart_Click(self):
-        if(self.isScannFinish):
+        if self.isScannFinish:
             q = QtWidgets.QMessageBox.question(
                 self, 'Reporte Existente!', 'Existe un reporte guardado recientemente si continua se perdera!.\nDesea continuar de todos modos?')
-            if(q == QtWidgets.QMessageBox.No):
+            if q == QtWidgets.QMessageBox.No:
                 return
             self.isScannFinish = False
         self.showProsess(True)
@@ -189,10 +190,10 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.btnAceptar.setEnabled(False)
         self.isInScann = True
         self.setBtnsEnabled(False)
-        if(self.scannFolder):
+        if self.scannFolder:
             self.VIC = genNewVic()
             self.scannFolder_Start()
-        elif(self.vicFile):
+        elif self.vicFile:
             self.VIC = readVICFromFile(self.vicFile)
             basePath = Path(self.vicFile).parent
             self.nsfw.scannVIC(self.VIC, str(basePath), self.saveFolder)
@@ -244,6 +245,6 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.imgFinder.find()
 
     def ImagesFinder_Finish(self, media: list):
-        if(media):
+        if media:
             updateMedia(self.VIC, media)
             self.nsfw.scannVIC(self.VIC, '', self.saveFolder)

@@ -1,6 +1,7 @@
 from pathlib import Path
 from time import time
 from PyQt5 import QtCore, QtGui
+from PIL import Image
 import cv2 as cv
 import fleep
 from src.utils.message import Message, NORMAL, WARNING, DANGER
@@ -8,9 +9,19 @@ from src.Nsfw.vic13 import updateMediaItem, isVICValid, getMediaFormVIC, getVicC
 from src.utils.formats import secondsToHMS
 
 
+class ImageNsfw():
+    score: int
+    file: str
+
+    def __init__(self, score: float, file: str):
+        self.file = file
+        self.score = round(score * 100)
+
+
 class NsfwScann(QtCore.QThread):
+
     # Model
-    model = None
+    model: object = None
     weight_file: str = 'model/resnet_50_1by2_nsfw.caffemodel'
     model_file: str = 'model/deploy.prototxt'
     # Signals
@@ -18,7 +29,7 @@ class NsfwScann(QtCore.QThread):
     statusBar: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
     progressMax: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
     progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
-    image: QtCore.pyqtSignal = QtCore.pyqtSignal(object, float)
+    image: QtCore.pyqtSignal = QtCore.pyqtSignal(ImageNsfw)
     video: QtCore.pyqtSignal = QtCore.pyqtSignal(QtGui.QImage, float)
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
 
@@ -35,6 +46,7 @@ class NsfwScann(QtCore.QThread):
     filesInReport: int = 0
     imageFiles: int = 0
     noImageFile: int = 0
+    gif_as_frame: bool = True
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -53,10 +65,10 @@ class NsfwScann(QtCore.QThread):
             self.status.emit(Message('Cargando Modelo...', True))
             from keras.preprocessing import image
             image = image
-            model = cv.dnn.readNetFromCaffe(
+            model_loaded = cv.dnn.readNetFromCaffe(
                 prototxt=self.model_file, caffeModel=self.weight_file)
             self.status.emit(Message('Modelo Cargado!', False))
-            return model
+            return model_loaded
         except FileNotFoundError:
             self.status.emit(
                 Message('No se encontraron los archivos del Modelo!', False, DANGER))
@@ -75,18 +87,19 @@ class NsfwScann(QtCore.QThread):
                            bytesPerLine, QtGui.QImage.Format_RGB888)
         self.video.emit(img, score)
 
-    def __scannVideo(self, file: str, isGif: bool=False):
-        from PIL import Image
+    def __scannGif(self, file: str):
+        pass
+
+    def __scannVideo(self, file: str):
         try:
-            self.status.emit(
-                Message('Escaneando Video...', True, NORMAL, False))
+            self.status.emit(Message(file + ' - Video...', True, NORMAL, False))
             maxScore = 0
             cap = cv.VideoCapture(file)
             fps = abs(cap.get(cv.CAP_PROP_FPS))
             fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
             frameToRead = 0
             while cap.isOpened():
-                frameToRead += fps if(fps > 10) else 1
+                frameToRead += fps if(fps > 10) else 10
                 if not frameToRead < fcount:
                     frameToRead = fcount
                 cap.set(1, frameToRead - 1)
@@ -96,7 +109,7 @@ class NsfwScann(QtCore.QThread):
                 if ok:
                     frame = cv.resize(frame, (256, 256))
                     pi = Image.fromarray(frame)
-                    score, _ = self.__scannImage(pi, False)
+                    score, _ = self.__scannImage(pi)
                     self.__video_emit(frame, score)
                     if score > maxScore:
                         maxScore = score
@@ -109,10 +122,10 @@ class NsfwScann(QtCore.QThread):
         finally:
             cap.release()
 
-    def __scannImage(self, img, isFile=True):
+    def __scannImage(self, img):
         from keras.preprocessing import image
         try:
-            if isFile:
+            if isinstance(img, str):
                 img = image.load_img(img, target_size=(256, 256))
             img_na = image.img_to_array(img)
             inputblob = cv.dnn.blobFromImage(
@@ -121,29 +134,27 @@ class NsfwScann(QtCore.QThread):
         except (ValueError, SyntaxError, OSError, TypeError):
             return (-1, None)
 
-    def isPorno(self, file_path: str, file_type: str):
+    def getScore(self, file_path: str):
         try:
-            file_extension = ''
-            if not file_type:
-                with open(file_path, "rb") as file:
-                    fileInfo = fleep.get(file.read(128))
-                file_type = fileInfo.type
-                file_extension = fileInfo.extension
+            with open(file_path, "rb") as file:
+                fileInfo = fleep.get(file.read(128))
+            file_type = fileInfo.type
+            file_extension = fileInfo.extension
         except IOError:
             file_type = 'None'
             file_extension = ''
         if 'video' in file_type:
-            probability = self.__scannVideo(file_path)
+            score = self.__scannVideo(file_path)
         else:
-            if 'gif' in file_extension:
-                probability = self.__scannVideo(file_path)
+            if ('gif' in file_extension) and self.gif_as_frame:
+                score = self.__scannGif(file_path)
             else:
-                probability, img = self.__scannImage(file_path, True)
-                if((probability >= self.minScore)and(img)):
-                    self.image.emit(img, probability)
-        return probability
+                score, img = self.__scannImage(file_path)
+                if((score >= self.minScore)and(img)):
+                    self.image.emit(ImageNsfw(score, file_path))
+        return score
 
-    def emitStatus(self):
+    def __emitStatus(self):
         ct: int = time()
         ett: int = ct - self.ti
         strTT: str = secondsToHMS(ett)
@@ -174,8 +185,7 @@ class NsfwScann(QtCore.QThread):
                 self.status.emit(Message(
                     'No se pudo recuperar los datos del Archivo VIC!', False, DANGER))
         else:
-            self.status.emit(
-                Message('Archivo VIC no valido!', False, DANGER))
+            self.status.emit(Message('Archivo VIC no valido!', False, DANGER))
 
     def run(self):
         self.isCanceled = False
@@ -192,13 +202,11 @@ class NsfwScann(QtCore.QThread):
             if self.isCanceled:
                 break
             img_path = str(m['RelativeFilePath']).replace('\\', '/')
-            file_type = m.get('FileType')
-            self.status.emit(
-                Message('Escanenado: ' + img_path, False, NORMAL, False))
+            self.status.emit(Message('Escanenado: ' + img_path, False, NORMAL, False))
             img_path = Path(img_path)
             if self.basePath:
                 img_path = Path(self.basePath).joinpath(img_path)
-            score = self.isPorno(str(img_path), file_type)
+            score = self.getScore(str(img_path))
             if score >= self.minScore:
                 msg = Message('SI %2.4f - %s' %
                               (score, img_path), False, NORMAL)
@@ -218,7 +226,7 @@ class NsfwScann(QtCore.QThread):
             self.status.emit(msg)
             self.currentFile += 1
             self.progress.emit(self.currentFile)
-            self.emitStatus()
+            self.__emitStatus()
 
         if not self.isCanceled:
             self.status.emit(Message('Escaneo Terminado!', False))
