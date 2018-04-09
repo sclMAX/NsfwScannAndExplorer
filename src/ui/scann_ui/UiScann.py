@@ -265,3 +265,6 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         if media:
             updateMedia(self.VIC, media)
             self.nsfw.scannVIC(self.VIC, '', self.saveFolder)
+        else:
+            self.setBtnsEnabled(True)
+            self.isInScann = False

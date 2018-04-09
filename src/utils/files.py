@@ -96,7 +96,14 @@ class ImagesFinder(QtCore.QThread):
     def run(self):
         self.status.emit(Message('Buscando Imagenes...'))
         # Buscar imagen en directorio y subdirectorios
-        fileList: list = self.__findImages(self.findPath)
+        fileList: list = []
+        try:
+            fileList: list = self.__findImages(self.findPath)
+        except PermissionError:
+            self.status.emit(Message('Debe correr el programa con permisos de Administrador!', False, DANGER, True))
+            self.stop()
+            self.finish.emit([])
+            return
         if fileList:
             # Crear media con las imagen encontradas
             media: list = []
