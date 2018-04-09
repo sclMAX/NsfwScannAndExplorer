@@ -69,6 +69,8 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         if not self.chkShowImage.isChecked() > 0:
             self.logImages.setVisible(False)
             self.video_viewer.setVisible(False)
+        elif self.nsfw_log_list:
+            self.logImages.setVisible(True)
 
     def video_scann(self, value: bool):
         self.video_viewer.setVisible(value and self.chkShowImage.isChecked())

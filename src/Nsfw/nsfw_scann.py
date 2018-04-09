@@ -5,6 +5,7 @@ from PIL import Image
 import cv2 as cv
 import fleep
 from src.utils.message import Message, NORMAL, WARNING, DANGER
+from src.utils import Image as ImgTools
 from src.Nsfw.vic13 import updateMediaItem, isVICValid, getMediaFormVIC, getVicCaseData
 from src.utils.formats import secondsToHMS
 
@@ -74,7 +75,8 @@ class NsfwScann(QtCore.QThread):
 
     def __loadModel(self):
         try:
-            self.status.emit(Message('Cargando Modelo...', True, NORMAL, False))
+            self.status.emit(
+                Message('Cargando Modelo...', True, NORMAL, False))
             model_loaded = cv.dnn.readNetFromCaffe(
                 prototxt=self.model_file, caffeModel=self.weight_file)
             self.status.emit(Message('Modelo Cargado!', False, NORMAL, False))
@@ -99,18 +101,23 @@ class NsfwScann(QtCore.QThread):
 
     def __scannGif(self, file: str):
         try:
+            import imageio
             self.status.emit(Message(file + ' - Gif...', True, NORMAL, False))
             self.video_scann.emit(True)
+            cap = None
             maxScore = 0
+            n = imageio.mimread(file)
             cap = cv.VideoCapture(file)
-            totalFrames: int = 30
+            totalFrames: int = n
+            self.status.emit(Message(file + ' - ' + str(n) +
+                                     ' Gif...', True, NORMAL, False))
             self.video_progress.emit(0, totalFrames)
             frame_nro: int = 0
             while cap.isOpened():
                 ok, frame = cap.read()
                 if ok:
                     frame = cv.resize(frame, (256, 256))
-                    pi = Image.fromarray(frame)
+                    pi = ImgTools.array_to_img(frame)
                     score, _ = self.__scannImage(pi)
                     if score > maxScore:
                         maxScore = score
@@ -122,13 +129,20 @@ class NsfwScann(QtCore.QThread):
                 else:
                     break
             return maxScore
+        except:
+            score, img = self.__scannImage(file)
+            if (score >= self.minScore)and(img):
+                self.image.emit(ImageNsfw(score, file))
+            return score
         finally:
-            cap.release()
+            if cap:
+                cap.release()
             self.video_scann.emit(False)
 
     def __scannVideo(self, file: str):
         try:
-            self.status.emit(Message(file + ' - Video...', True, NORMAL, False))
+            self.status.emit(
+                Message(file + ' - Video...', True, NORMAL, False))
             self.video_scann.emit(True)
             maxScore = 0
             cap = cv.VideoCapture(file)
@@ -161,7 +175,6 @@ class NsfwScann(QtCore.QThread):
             self.video_scann.emit(False)
 
     def __scannImage(self, img):
-        from src.utils import Image as ImgTools
         try:
             if isinstance(img, str):
                 img = ImgTools.load_img(img, target_size=(256, 256))
@@ -181,6 +194,8 @@ class NsfwScann(QtCore.QThread):
         except IOError:
             file_type = ['']
             file_extension = ['']
+        finally:
+            file.close()
         if 'video' in file_type:
             score = self.__scannVideo(file_path)
         else:
@@ -245,7 +260,8 @@ class NsfwScann(QtCore.QThread):
                     self.isPauseEmit = True
             self.isPauseEmit = False
             img_path = str(m['RelativeFilePath']).replace('\\', '/')
-            self.status.emit(Message('Escanenado: ' + img_path, False, NORMAL, False))
+            self.status.emit(
+                Message('Escanenado: ' + img_path, False, NORMAL, False))
             img_path = Path(img_path)
             if self.basePath:
                 img_path = Path(self.basePath).joinpath(img_path)
