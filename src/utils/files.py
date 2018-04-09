@@ -63,12 +63,10 @@ class ImagesFinder(QtCore.QThread):
             if filetype:
                 for t in validTypes:
                     if t in filetype:
-                        if 'gif' in fileInfo.extension:
-                            t = 'video'
-                        return t
+                        return (t, fileInfo.extension[0])
             return None
         except IOError:
-            return None
+            return (None, None)
 
     def __findImages(self, path: str):
         dirpath = Path(path)
@@ -80,12 +78,12 @@ class ImagesFinder(QtCore.QThread):
             if x.is_file():
                 try:
                     self.totalFiles += 1
-                    fileType = self.__isValidFile(x)
+                    fileType, fileExtension = self.__isValidFile(x)
                     if not fileType:
                         continue
                     self.totalImages += 1
                     file_list.append(
-                        {'file': str(x), 'type': fileType})
+                        {'file': str(x), 'type': fileType, 'extension': fileExtension})
                 finally:
                     txt: str = 'Encontradas %d Imagenes  de %d Archivos encontrados! Buscando...' % (
                         self.totalImages, self.totalFiles)
@@ -112,7 +110,8 @@ class ImagesFinder(QtCore.QThread):
                 updateMediaItem(mediaItem, {
                     'MediaID': count,
                     'RelativeFilePath': str(f['file']),
-                    'FileType': str(f['type'])
+                    'FileType': str(f['type']),
+                    'FileExtension': str(f['extension'])
                 })
                 media.append(mediaItem)
                 count += 1

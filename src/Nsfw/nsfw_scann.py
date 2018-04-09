@@ -31,11 +31,14 @@ class NsfwScann(QtCore.QThread):
     progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int)
     image: QtCore.pyqtSignal = QtCore.pyqtSignal(ImageNsfw)
     video: QtCore.pyqtSignal = QtCore.pyqtSignal(QtGui.QImage, float)
+    video_progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int, int)
+    video_scann: QtCore.pyqtSignal = QtCore.pyqtSignal(bool)
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
 
     # Scann Vars
     media: list = []
     isCanceled: bool = False
+    isInPause: bool = False
     saveFolder: str = ''
     basePath: str = ''
     minScore: float = 0
@@ -47,6 +50,7 @@ class NsfwScann(QtCore.QThread):
     imageFiles: int = 0
     noImageFile: int = 0
     gif_as_frame: bool = True
+    isPauseEmit: bool = False
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -55,19 +59,27 @@ class NsfwScann(QtCore.QThread):
     def setMinScore(self, score):
         self.minScore = score / 100
 
+    @QtCore.pyqtSlot(int)
+    def setGif_as_frame(self, chkState: int):
+        self.gif_as_frame = chkState > 0
+
     @QtCore.pyqtSlot()
     def stop(self):
         self.isCanceled = True
         self.exit()
 
+    @QtCore.pyqtSlot()
+    def pause(self):
+        self.isInPause = not self.isInPause
+
     def __loadModel(self):
         try:
-            self.status.emit(Message('Cargando Modelo...', True))
+            self.status.emit(Message('Cargando Modelo...', True, NORMAL, False))
             from keras.preprocessing import image
             image = image
             model_loaded = cv.dnn.readNetFromCaffe(
                 prototxt=self.model_file, caffeModel=self.weight_file)
-            self.status.emit(Message('Modelo Cargado!', False))
+            self.status.emit(Message('Modelo Cargado!', False, NORMAL, False))
             return model_loaded
         except FileNotFoundError:
             self.status.emit(
@@ -88,39 +100,67 @@ class NsfwScann(QtCore.QThread):
         self.video.emit(img, score)
 
     def __scannGif(self, file: str):
-        pass
-
-    def __scannVideo(self, file: str):
         try:
-            self.status.emit(Message(file + ' - Video...', True, NORMAL, False))
+            self.status.emit(Message(file + ' - Gif...', True, NORMAL, False))
+            self.video_scann.emit(True)
             maxScore = 0
             cap = cv.VideoCapture(file)
-            fps = abs(cap.get(cv.CAP_PROP_FPS))
-            fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
-            frameToRead = 0
+            totalFrames: int = 30
+            self.video_progress.emit(0, totalFrames)
+            frame_nro: int = 0
             while cap.isOpened():
-                frameToRead += fps if(fps > 10) else 10
-                if not frameToRead < fcount:
-                    frameToRead = fcount
-                cap.set(1, frameToRead - 1)
-                _ = cap.get(cv.CAP_PROP_POS_AVI_RATIO)
-                _ = cap.get(cv.CAP_PROP_POS_MSEC)
                 ok, frame = cap.read()
                 if ok:
                     frame = cv.resize(frame, (256, 256))
                     pi = Image.fromarray(frame)
                     score, _ = self.__scannImage(pi)
-                    self.__video_emit(frame, score)
                     if score > maxScore:
                         maxScore = score
+                    frame_nro += 1
+                    self.__video_emit(frame, score)
+                    self.video_progress.emit(frame_nro, -1)
+                    if frame_nro >= totalFrames:
+                        break
+                else:
+                    break
+            return maxScore
+        finally:
+            cap.release()
+            self.video_scann.emit(False)
+
+    def __scannVideo(self, file: str):
+        try:
+            self.status.emit(Message(file + ' - Video...', True, NORMAL, False))
+            self.video_scann.emit(True)
+            maxScore = 0
+            cap = cv.VideoCapture(file)
+            fps = abs(cap.get(cv.CAP_PROP_FPS))
+            fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
+            self.video_progress.emit(0, fcount)
+            frameToRead = 0
+            while cap.isOpened():
+                frameToRead += fps if(fps > 15) else 15
+                if not frameToRead < fcount:
+                    frameToRead = fcount
+                cap.set(1, frameToRead - 1)
+                ok, frame = cap.read()
+                if ok:
+                    frame = cv.resize(frame, (256, 256))
+                    pi = Image.fromarray(frame)
+                    score, _ = self.__scannImage(pi)
+                    if score >= self.minScore:
+                        self.__video_emit(frame, score)
+                    if score > maxScore:
+                        maxScore = score
+                    self.video_progress.emit(frameToRead, -1)
                     if frameToRead >= fcount:
                         break
                 else:
                     break
-
             return maxScore
         finally:
             cap.release()
+            self.video_scann.emit(False)
 
     def __scannImage(self, img):
         from keras.preprocessing import image
@@ -152,7 +192,7 @@ class NsfwScann(QtCore.QThread):
                 score, img = self.__scannImage(file_path)
                 if((score >= self.minScore)and(img)):
                     self.image.emit(ImageNsfw(score, file_path))
-        return score
+        return (score, file_type[0], file_extension[0])
 
     def __emitStatus(self):
         ct: int = time()
@@ -201,12 +241,17 @@ class NsfwScann(QtCore.QThread):
         for m in self.media:
             if self.isCanceled:
                 break
+            while self.isInPause:
+                if not self.isPauseEmit:
+                    self.status.emit(Message('PAUSADO!', False, NORMAL, False))
+                    self.isPauseEmit = True
+            self.isPauseEmit = False
             img_path = str(m['RelativeFilePath']).replace('\\', '/')
             self.status.emit(Message('Escanenado: ' + img_path, False, NORMAL, False))
             img_path = Path(img_path)
             if self.basePath:
                 img_path = Path(self.basePath).joinpath(img_path)
-            score = self.getScore(str(img_path))
+            score, file_type, file_extension = self.getScore(str(img_path))
             if score >= self.minScore:
                 msg = Message('SI %2.4f - %s' %
                               (score, img_path), False, NORMAL)
@@ -220,7 +265,9 @@ class NsfwScann(QtCore.QThread):
                               (score, img_path), False, WARNING)
                 self.imageFiles += 1
             updateMediaItem(m, {
-                'Comments': ('%2.4f' % (score))
+                'Comments': ('%2.4f' % (score)),
+                'FileType': file_type,
+                'FileExtension': file_extension
             })
 
             self.status.emit(msg)
@@ -229,7 +276,7 @@ class NsfwScann(QtCore.QThread):
             self.__emitStatus()
 
         if not self.isCanceled:
-            self.status.emit(Message('Escaneo Terminado!', False))
+            self.status.emit(Message('\nEscaneo Terminado!', False))
             self.status.emit(Message('Total de Archivos: %d' %
                                      (self.totalFiles)))
             self.status.emit(Message('Tiempo Total: %s' %

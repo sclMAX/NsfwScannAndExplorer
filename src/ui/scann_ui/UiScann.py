@@ -26,13 +26,13 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
     #Nsfw Log Vars
     nsfw_log_list: list = []
     next_udate_item: int = 0
-    nro_items: int = 4
+    nro_items: int = 5
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
         self.showProsess(False)
-        self.video.setVisible(False)
+        self.video_viewer.setVisible(False)
         self.logImages.setVisible(False)
         self.resize(self.groupBox.size())
         self.nsfw = NsfwScann(self)
@@ -42,6 +42,8 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.nsfw.status.connect(self.setStatus)
         self.nsfw.image.connect(self.mostrarImagen)
         self.nsfw.video.connect(self.mostrarVideo)
+        self.nsfw.video_progress.connect(self.video_progress_set)
+        self.nsfw.video_scann.connect(self.video_scann)
         self.nsfw.finish.connect(self.nsfw_finish)
         self.selScore.valueChanged.connect(self.progressBarScore.setValue)
         self.progressBarScore.valueChanged.connect(self.nsfw.setMinScore)
@@ -52,7 +54,9 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.btnScannFolder.clicked.connect(self.btnScannFolder_Click)
         self.btnVIC.clicked.connect(self.btnVIC_Click)
         self.btnSave.clicked.connect(self.btnSave_Click)
+        self.btnPause.clicked.connect(self.nsfw.pause)
         self.chkShowImage.stateChanged.connect(self.showImage)
+        self.chkGif_as_frame.stateChanged.connect(self.nsfw.setGif_as_frame)
 
     def showProsess(self, isShow=False):
         self.progressBar.setVisible(isShow)
@@ -62,9 +66,12 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.repaint()
 
     def showImage(self):
-        isShow: bool = self.chkShowImage.isChecked() > 0
-        self.logImages.setVisible(isShow)
-        self.logImages.repaint()
+        if not self.chkShowImage.isChecked() > 0:
+            self.logImages.setVisible(False)
+            self.video_viewer.setVisible(False)
+
+    def video_scann(self, value: bool):
+        self.video_viewer.setVisible(value and self.chkShowImage.isChecked())
 
     def timerTimeOut(self):
         c: list = [' |', ' /', ' -', ' \\']
@@ -96,6 +103,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.txtLog.setTextColor(color)
         if msg.isLog:
             self.txtLog.append(msg.msg)
+            self.txtLog.verticalScrollBar().setValue(self.txtLog.verticalScrollBar().maximum())
             self.txtLog.repaint()
 
     def setStatusBar(self, txt):
@@ -114,26 +122,33 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             if self.next_udate_item >= self.nro_items:
                 self.next_udate_item = 0
             self.nsfw_log_list[self.next_udate_item].setAll(img_nsfw.file, img_nsfw.score)
-        if self.chkShowImage.isChecked() > 0:
+        if self.chkShowImage.isChecked():
             if not self.logImages.isVisible():
                 self.logImages.setVisible(True)
                 self.logImages.repaint()
 
     def mostrarVideo(self, frame: QtGui.QImage, score):
-        if self.chkShowImage.isChecked() > 0:
-            self.video.setVisible(True)
+        if self.chkShowImage.isChecked():
             pix = QtGui.QPixmap.fromImage(frame)
             self.video_score.setValue(score * 100)
             self.video_frame.setPixmap(pix)
-            self.video.repaint()
-        else:
-            self.video.setVisible(False)
+            self.video_frame.repaint()
+            if not self.video_viewer.isVisible():
+                self.video_viewer.setVisible(True)
+                self.video_viewer.repaint()
+
+    def video_progress_set(self, value: int, maximum: int):
+        if self.chkShowImage.isChecked():
+            if maximum >= 0:
+                self.video_progress.setMaximum(maximum)
+            self.video_progress.setValue(value)
 
     def setBtnsEnabled(self, isEnable: bool):
         self.btnScannFolder.setEnabled(isEnable)
         self.btnStart.setEnabled(isEnable)
         self.btnSave.setEnabled(isEnable)
         self.btnVIC.setEnabled(isEnable)
+        self.btnPause.setEnabled(not isEnable)
 
     def nsfw_finish(self, media):
         try:
