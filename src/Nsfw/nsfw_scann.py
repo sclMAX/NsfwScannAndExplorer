@@ -100,8 +100,8 @@ class NsfwScann(QtCore.QThread):
         self.video.emit(img, score)
 
     def __scannGif(self, file: str):
-        try:
-            import imageio
+        import imageio
+        try:            
             self.status.emit(Message(file + ' - Gif...', True, NORMAL, False))
             self.video_scann.emit(True)
             cap = None
@@ -109,8 +109,6 @@ class NsfwScann(QtCore.QThread):
             n = imageio.mimread(file)
             cap = cv.VideoCapture(file)
             totalFrames: int = n
-            self.status.emit(Message(file + ' - ' + str(n) +
-                                     ' Gif...', True, NORMAL, False))
             self.video_progress.emit(0, totalFrames)
             frame_nro: int = 0
             while cap.isOpened():
