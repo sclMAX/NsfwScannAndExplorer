@@ -75,8 +75,6 @@ class NsfwScann(QtCore.QThread):
     def __loadModel(self):
         try:
             self.status.emit(Message('Cargando Modelo...', True, NORMAL, False))
-            from keras.preprocessing import image
-            image = image
             model_loaded = cv.dnn.readNetFromCaffe(
                 prototxt=self.model_file, caffeModel=self.weight_file)
             self.status.emit(Message('Modelo Cargado!', False, NORMAL, False))
@@ -163,11 +161,11 @@ class NsfwScann(QtCore.QThread):
             self.video_scann.emit(False)
 
     def __scannImage(self, img):
-        from keras.preprocessing import image
+        from src.utils import Image as ImgTools
         try:
             if isinstance(img, str):
-                img = image.load_img(img, target_size=(256, 256))
-            img_na = image.img_to_array(img)
+                img = ImgTools.load_img(img, target_size=(256, 256))
+            img_na = ImgTools.img_to_array(img)
             inputblob = cv.dnn.blobFromImage(
                 img_na, 1., (224, 224), (104, 117, 123), False, False)
             return (self.__getScore(inputblob), img)
