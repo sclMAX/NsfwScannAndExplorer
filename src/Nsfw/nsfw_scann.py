@@ -2,6 +2,7 @@ from pathlib import Path
 from time import time
 from PyQt5 import QtCore, QtGui
 from PIL import Image
+import imageio
 import cv2 as cv
 import fleep
 from src.utils.message import Message, NORMAL, WARNING, DANGER
@@ -100,8 +101,7 @@ class NsfwScann(QtCore.QThread):
         self.video.emit(img, score)
 
     def __scannGif(self, file: str):
-        import imageio
-        try:            
+        try:
             self.status.emit(Message(file + ' - Gif...', True, NORMAL, False))
             self.video_scann.emit(True)
             cap = None
