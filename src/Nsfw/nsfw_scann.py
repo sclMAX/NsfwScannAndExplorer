@@ -179,7 +179,7 @@ class NsfwScann(QtCore.QThread):
             file_type = fileInfo.type
             file_extension = fileInfo.extension
         except IOError:
-            file_type = 'None'
+            file_type = ''
             file_extension = ''
         if 'video' in file_type:
             score = self.__scannVideo(file_path)
@@ -190,7 +190,7 @@ class NsfwScann(QtCore.QThread):
                 score, img = self.__scannImage(file_path)
                 if((score >= self.minScore)and(img)):
                     self.image.emit(ImageNsfw(score, file_path))
-        return (score, file_type[0], file_extension[0])
+        return (score, file_type[0] if file_type else file_type , file_extension[0] if file_extension else file_extension)
 
     def __emitStatus(self):
         ct: int = time()
