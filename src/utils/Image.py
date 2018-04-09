@@ -2,6 +2,7 @@ import numpy as np
 try:
  #   from PIL import ImageEnhance
     from PIL import Image as pil_image
+    from PIL import ImageQt
 except ImportError:
     pil_image = None
 
@@ -135,3 +136,6 @@ def array_to_img(x, data_format='channels_last', scale=True):
         return pil_image.fromarray(x[:, :, 0].astype('uint8'), 'L')
     else:
         raise ValueError('Unsupported channel number: ', x.shape[2])
+
+def img_to_qt (img):
+    return ImageQt.ImageQt(img)

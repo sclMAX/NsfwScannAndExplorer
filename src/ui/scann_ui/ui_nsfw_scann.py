@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'src/ui/scann_ui/ui_nsfw_scann.ui'
+# Form implementation generated from reading ui file 'scann_ui/ui_nsfw_scann.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -412,7 +412,7 @@ class Ui_dlgNsfwScanner(object):
         spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem2)
         self.horizontalLayout_3.addLayout(self.verticalLayout)
-        self.verticalLayout_2.addWidget(self.groupBox)
+        self.verticalLayout_2.addWidget(self.groupBox, 0, QtCore.Qt.AlignTop)
         self.logImages = QtWidgets.QGroupBox(dlgNsfwScanner)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
