@@ -16,7 +16,11 @@ class NsfwCard(QtWidgets.QFrame):
         self.__setup(width, height)
         self.self_btnOpen.clicked.connect(self.btnOpen_click)
         self.self_btnRemove.clicked.connect(self.btnRemove_click)
-        
+
+    def __del__(self):
+        print('Delete')
+        self.cleanUp()
+
     def getScore(self):
         comment: str = self.data.get('Comments')
         score: float = float(comment)
@@ -25,6 +29,7 @@ class NsfwCard(QtWidgets.QFrame):
     def getFilePath(self):
         file_path: str = self.data.get('RelativeFilePath')
         if file_path:
+            file_path = file_path.replace('\\', '/')
             media_base_path = Path(file_path).parent
             if Path(self.base_path) != media_base_path.parent:
                 file_path = str(Path(self.base_path).joinpath(file_path))

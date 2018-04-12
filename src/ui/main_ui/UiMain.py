@@ -103,7 +103,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def removeCard(self, card: NsfwCard):
         self.cards.removeWidget(card)
-        self.cards_list.remove(card)        
+        self.cards_list.remove(card)
         card.deleteLater()
         del card
 
@@ -113,7 +113,6 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.filter_media.remove(card.data)
         self.removeCard(card)
         self.update_lbls()
-        self.__updateView()
 
     def getPageMedia(self, cards_for_page: int):
         page_media: list = []
@@ -160,4 +159,3 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.VIC = readVICFromFile(self.vic_file)
             self.media = getMediaFormVIC(self.VIC)
             self.__updateView()
-
