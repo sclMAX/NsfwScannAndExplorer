@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'scann_ui/ui_nsfw_scann.ui'
+# Form implementation generated from reading ui file 'src/ui/scann_ui/ui_nsfw_scann.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from src.ui import resources_rc
 
 class Ui_dlgNsfwScanner(object):
     def setupUi(self, dlgNsfwScanner):
@@ -20,7 +21,7 @@ class Ui_dlgNsfwScanner(object):
         dlgNsfwScanner.setSizePolicy(sizePolicy)
         dlgNsfwScanner.setMaximumSize(QtCore.QSize(16777215, 16777215))
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/icon-wifi.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/iconos/scanner"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         dlgNsfwScanner.setWindowIcon(icon)
         dlgNsfwScanner.setToolTip("")
         dlgNsfwScanner.setLayoutDirection(QtCore.Qt.LeftToRight)
@@ -58,7 +59,7 @@ class Ui_dlgNsfwScanner(object):
         self.btnScannFolder.setMinimumSize(QtCore.QSize(50, 50))
         self.btnScannFolder.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("icons/icon-searchfolder.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(":/iconos/mainIcon"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnScannFolder.setIcon(icon1)
         self.btnScannFolder.setIconSize(QtCore.QSize(48, 48))
         self.btnScannFolder.setObjectName("btnScannFolder")
@@ -103,7 +104,7 @@ class Ui_dlgNsfwScanner(object):
         self.btnSave.setMinimumSize(QtCore.QSize(50, 50))
         self.btnSave.setText("")
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("icons/icon-save-floppy.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon2.addPixmap(QtGui.QPixmap(":/iconos/save"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnSave.setIcon(icon2)
         self.btnSave.setIconSize(QtCore.QSize(48, 48))
         self.btnSave.setObjectName("btnSave")
@@ -375,7 +376,7 @@ class Ui_dlgNsfwScanner(object):
         self.btnStart.setMinimumSize(QtCore.QSize(50, 50))
         self.btnStart.setText("")
         icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap("icons/icon-acsource.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon3.addPixmap(QtGui.QPixmap(":/iconos/scann"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnStart.setIcon(icon3)
         self.btnStart.setIconSize(QtCore.QSize(48, 48))
         self.btnStart.setObjectName("btnStart")
@@ -384,7 +385,7 @@ class Ui_dlgNsfwScanner(object):
         self.btnPause.setEnabled(False)
         self.btnPause.setText("")
         icon4 = QtGui.QIcon()
-        icon4.addPixmap(QtGui.QPixmap("icons/icon-handdrag.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon4.addPixmap(QtGui.QPixmap(":/iconos/pause"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnPause.setIcon(icon4)
         self.btnPause.setIconSize(QtCore.QSize(48, 48))
         self.btnPause.setCheckable(True)
@@ -395,7 +396,7 @@ class Ui_dlgNsfwScanner(object):
         self.btnAceptar.setMinimumSize(QtCore.QSize(50, 50))
         self.btnAceptar.setText("")
         icon5 = QtGui.QIcon()
-        icon5.addPixmap(QtGui.QPixmap("icons/icon-circleselect.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon5.addPixmap(QtGui.QPixmap(":/iconos/ok"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnAceptar.setIcon(icon5)
         self.btnAceptar.setIconSize(QtCore.QSize(48, 48))
         self.btnAceptar.setObjectName("btnAceptar")
@@ -404,7 +405,7 @@ class Ui_dlgNsfwScanner(object):
         self.btnClose.setMinimumSize(QtCore.QSize(50, 50))
         self.btnClose.setText("")
         icon6 = QtGui.QIcon()
-        icon6.addPixmap(QtGui.QPixmap("icons/icon-circledelete.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon6.addPixmap(QtGui.QPixmap(":/iconos/cancel"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnClose.setIcon(icon6)
         self.btnClose.setIconSize(QtCore.QSize(48, 48))
         self.btnClose.setObjectName("btnClose")

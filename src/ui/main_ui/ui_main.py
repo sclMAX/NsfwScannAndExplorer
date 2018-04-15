@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main_ui/ui_main.ui'
+# Form implementation generated from reading ui file 'src/ui/main_ui/ui_main.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from src.ui import resources_rc
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -14,7 +15,7 @@ class Ui_MainWindow(object):
         MainWindow.setEnabled(True)
         MainWindow.resize(1071, 734)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/icon-searchfolder.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/iconos/mainIcon"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
         MainWindow.setAnimated(True)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -30,7 +31,7 @@ class Ui_MainWindow(object):
         self.btnScanner = QtWidgets.QToolButton(self.groupBox)
         self.btnScanner.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("icons/icon-wifi.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(":/iconos/scanner"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnScanner.setIcon(icon1)
         self.btnScanner.setIconSize(QtCore.QSize(48, 48))
         self.btnScanner.setObjectName("btnScanner")
@@ -38,7 +39,7 @@ class Ui_MainWindow(object):
         self.btnOpen = QtWidgets.QToolButton(self.groupBox)
         self.btnOpen.setText("")
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("icons/icon-folder-open.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon2.addPixmap(QtGui.QPixmap(":/iconos/open"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnOpen.setIcon(icon2)
         self.btnOpen.setIconSize(QtCore.QSize(48, 48))
         self.btnOpen.setObjectName("btnOpen")
@@ -47,7 +48,7 @@ class Ui_MainWindow(object):
         self.btnSave.setEnabled(False)
         self.btnSave.setText("")
         icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap("icons/icon-save-floppy.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon3.addPixmap(QtGui.QPixmap(":/iconos/save"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnSave.setIcon(icon3)
         self.btnSave.setIconSize(QtCore.QSize(48, 48))
         self.btnSave.setObjectName("btnSave")
@@ -58,7 +59,7 @@ class Ui_MainWindow(object):
         self.btnUndo.setEnabled(False)
         self.btnUndo.setText("")
         icon4 = QtGui.QIcon()
-        icon4.addPixmap(QtGui.QPixmap("icons/undo.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon4.addPixmap(QtGui.QPixmap(":/iconos/undo"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnUndo.setIcon(icon4)
         self.btnUndo.setIconSize(QtCore.QSize(48, 48))
         self.btnUndo.setArrowType(QtCore.Qt.NoArrow)
@@ -88,7 +89,7 @@ class Ui_MainWindow(object):
         self.listView.setWidgetResizable(True)
         self.listView.setObjectName("listView")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 985, 531))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 989, 503))
         self.scrollAreaWidgetContents.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
@@ -148,7 +149,7 @@ class Ui_MainWindow(object):
         self.btnFiltro.setEnabled(True)
         self.btnFiltro.setText("")
         icon6 = QtGui.QIcon()
-        icon6.addPixmap(QtGui.QPixmap("icons/icon-antenna.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon6.addPixmap(QtGui.QPixmap(":/iconos/filter"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnFiltro.setIcon(icon6)
         self.btnFiltro.setIconSize(QtCore.QSize(48, 48))
         self.btnFiltro.setCheckable(True)
@@ -173,7 +174,7 @@ class Ui_MainWindow(object):
         self.btnFiltro_Invertir.setEnabled(True)
         self.btnFiltro_Invertir.setText("")
         icon7 = QtGui.QIcon()
-        icon7.addPixmap(QtGui.QPixmap("icons/icon-syncalt.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon7.addPixmap(QtGui.QPixmap(":/iconos/invertFilter"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnFiltro_Invertir.setIcon(icon7)
         self.btnFiltro_Invertir.setIconSize(QtCore.QSize(48, 48))
         self.btnFiltro_Invertir.setCheckable(True)
@@ -207,6 +208,8 @@ class Ui_MainWindow(object):
         self.lblProgress.setObjectName("lblProgress")
         self.verticalLayout_2.addWidget(self.lblProgress)
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
+        self.progressBar.setMinimum(0)
+        self.progressBar.setMaximum(0)
         self.progressBar.setProperty("value", 0)
         self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
         self.progressBar.setObjectName("progressBar")
@@ -241,7 +244,8 @@ class Ui_MainWindow(object):
         self.lblPages.setText(_translate("MainWindow", "1/1"))
         self.btnListDown.setToolTip(_translate("MainWindow", "<html><head/><body><p>Pagina Siguiente.</p></body></html>"))
         self.btnFiltro.setToolTip(_translate("MainWindow", "<html><head/><body><p>Aplicar / Quitar Filtro.</p></body></html>"))
-        self.lblFiltro.setText(_translate("MainWindow", ">15%"))
+        self.lblFiltro.setText(_translate("MainWindow", "> 15%"))
         self.btnFiltro_Invertir.setToolTip(_translate("MainWindow", "<html><head/><body><p>Invertir filtro.</p></body></html>"))
         self.slrFiltro.setToolTip(_translate("MainWindow", "<html><head/><body><p>Especificar Filtro por Probabilidad.</p></body></html>"))
+
 

@@ -2,6 +2,7 @@ from pathlib import Path
 import webbrowser
 import cv2 as cv
 from PyQt5 import QtGui, QtWidgets, QtCore
+from src.ui import resources_rc
 
 
 class NsfwCard(QtWidgets.QFrame):
@@ -115,7 +116,6 @@ class NsfwCard(QtWidgets.QFrame):
             QtWidgets.QLayout.SetDefaultConstraint)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setSpacing(2)
-        self.verticalLayout.setObjectName("verticalLayout")
         self.horizontalFrame = QtWidgets.QFrame(self)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -124,11 +124,9 @@ class NsfwCard(QtWidgets.QFrame):
         sizePolicy.setHeightForWidth(
             self.horizontalFrame.sizePolicy().hasHeightForWidth())
         self.horizontalFrame.setSizePolicy(sizePolicy)
-        self.horizontalFrame.setObjectName("horizontalFrame")
         self.self_buttons = QtWidgets.QHBoxLayout(self.horizontalFrame)
         self.self_buttons.setContentsMargins(2, 2, 2, 2)
         self.self_buttons.setSpacing(2)
-        self.self_buttons.setObjectName("self_buttons")
         self.self_btnOpen = QtWidgets.QToolButton(self.horizontalFrame)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -139,7 +137,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_btnOpen.setSizePolicy(sizePolicy)
         self.self_btnOpen.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/icon-search.png"),
+        icon.addPixmap(QtGui.QPixmap(":iconos/view_image"),
                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.self_btnOpen.setIcon(icon)
         self.self_btnOpen.setIconSize(QtCore.QSize(16, 16))
@@ -157,7 +155,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_btnRemove.setSizePolicy(sizePolicy)
         self.self_btnRemove.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("icons/icon-circledelete.png"),
+        icon1.addPixmap(QtGui.QPixmap(":iconos/cancel"),
                         QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.self_btnRemove.setIcon(icon1)
         self.self_btnRemove.setIconSize(QtCore.QSize(16, 16))

@@ -29,8 +29,8 @@
    <string>Open Nsfw Scann v1.0 by MAX</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>icons/icon-wifi.png</normaloff>icons/icon-wifi.png</iconset>
+   <iconset resource="../resources.qrc">
+    <normaloff>:/iconos/scanner</normaloff>:/iconos/scanner</iconset>
   </property>
   <property name="toolTip">
    <string/>
@@ -97,8 +97,8 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
-              <normaloff>icons/icon-searchfolder.png</normaloff>icons/icon-searchfolder.png</iconset>
+             <iconset resource="../resources.qrc">
+              <normaloff>:/iconos/mainIcon</normaloff>:/iconos/mainIcon</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -196,8 +196,8 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset>
-              <normaloff>icons/icon-save-floppy.png</normaloff>icons/icon-save-floppy.png</iconset>
+             <iconset resource="../resources.qrc">
+              <normaloff>:/iconos/save</normaloff>:/iconos/save</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -985,8 +985,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset>
-            <normaloff>icons/icon-acsource.png</normaloff>icons/icon-acsource.png</iconset>
+           <iconset resource="../resources.qrc">
+            <normaloff>:/iconos/scann</normaloff>:/iconos/scann</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -1008,8 +1008,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset>
-            <normaloff>icons/icon-handdrag.png</normaloff>icons/icon-handdrag.png</iconset>
+           <iconset resource="../resources.qrc">
+            <normaloff>:/iconos/pause</normaloff>:/iconos/pause</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -1040,8 +1040,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset>
-            <normaloff>icons/icon-circleselect.png</normaloff>icons/icon-circleselect.png</iconset>
+           <iconset resource="../resources.qrc">
+            <normaloff>:/iconos/ok</normaloff>:/iconos/ok</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -1066,8 +1066,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset>
-            <normaloff>icons/icon-circledelete.png</normaloff>icons/icon-circledelete.png</iconset>
+           <iconset resource="../resources.qrc">
+            <normaloff>:/iconos/cancel</normaloff>:/iconos/cancel</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -1320,6 +1320,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

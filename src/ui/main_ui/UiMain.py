@@ -66,7 +66,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
     def changeFilterScore(self):
         fv = self.pgbFiltro.value()
         self.filter_value = fv /100
-        tf = '<' if self.isFilterInvert else '>'
+        tf = '< ' if self.isFilterInvert else '> '
         self.lblFiltro.setText('%s%d%s' % (tf, fv, '%'))
         self.isFilterChange = True
 

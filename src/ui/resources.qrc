@@ -1,0 +1,16 @@
+<RCC>
+  <qresource prefix="iconos">
+    <file alias="view_image">icons/icon-search.png</file>
+    <file alias="cancel">icons/icon-circledelete.png</file>
+    <file alias="ok">icons/icon-circleselect.png</file>
+    <file alias="pause">icons/icon-handdrag.png</file>
+    <file alias="scann">icons/icon-acsource.png</file>
+    <file alias="open">icons/icon-folder-open.png</file>
+    <file alias="save">icons/icon-save-floppy.png</file>
+    <file alias="undo">icons/undo.png</file>
+    <file alias="filter">icons/icon-antenna.png</file>
+    <file alias="invertFilter">icons/icon-syncalt.png</file>
+    <file alias="mainIcon">icons/icon-searchfolder.png</file>
+    <file alias="scanner">icons/icon-wifi.png</file>
+  </qresource>
+</RCC>

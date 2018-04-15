@@ -17,8 +17,8 @@
    <string>Nsfw Report Explorer v1.0 by MAX</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>icons/icon-searchfolder.png</normaloff>icons/icon-searchfolder.png</iconset>
+   <iconset resource="../resources.qrc">
+    <normaloff>:/iconos/mainIcon</normaloff>:/iconos/mainIcon</iconset>
   </property>
   <property name="animated">
    <bool>true</bool>
@@ -49,8 +49,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>icons/icon-wifi.png</normaloff>icons/icon-wifi.png</iconset>
+          <iconset resource="../resources.qrc">
+           <normaloff>:/iconos/scanner</normaloff>:/iconos/scanner</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -69,8 +69,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>icons/icon-folder-open.png</normaloff>icons/icon-folder-open.png</iconset>
+          <iconset resource="../resources.qrc">
+           <normaloff>:/iconos/open</normaloff>:/iconos/open</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -92,8 +92,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>icons/icon-save-floppy.png</normaloff>icons/icon-save-floppy.png</iconset>
+          <iconset resource="../resources.qrc">
+           <normaloff>:/iconos/save</normaloff>:/iconos/save</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -128,8 +128,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>icons/undo.png</normaloff>icons/undo.png</iconset>
+          <iconset resource="../resources.qrc">
+           <normaloff>:/iconos/undo</normaloff>:/iconos/undo</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -189,8 +189,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>985</width>
-             <height>531</height>
+             <width>989</width>
+             <height>503</height>
             </rect>
            </property>
            <property name="layoutDirection">
@@ -337,8 +337,8 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>icons/icon-antenna.png</normaloff>icons/icon-antenna.png</iconset>
+              <iconset resource="../resources.qrc">
+               <normaloff>:/iconos/filter</normaloff>:/iconos/filter</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -389,8 +389,8 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>icons/icon-syncalt.png</normaloff>icons/icon-syncalt.png</iconset>
+              <iconset resource="../resources.qrc">
+               <normaloff>:/iconos/invertFilter</normaloff>:/iconos/invertFilter</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -508,6 +508,8 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
