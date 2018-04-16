@@ -1,6 +1,7 @@
 import webbrowser
 from pathlib import Path
 from PyQt5 import QtWidgets, QtCore, QtGui
+from src.ui import resources_rc
 
 
 class NsfwLogItem(QtWidgets.QFrame):
@@ -62,7 +63,7 @@ class NsfwLogItem(QtWidgets.QFrame):
         self.__btnImage = QtWidgets.QToolButton(self)
         self.__btnImage.setText("")
         icon6 = QtGui.QIcon()
-        icon6.addPixmap(QtGui.QPixmap("icons/icon-tectile.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon6.addPixmap(QtGui.QPixmap(":iconos/viewImage"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.__btnImage.setIcon(icon6)
         self.__btnImage.clicked.connect(self.__btnImage_click)
         self.__horizontalLayout_1.addWidget(self.__btnImage, 0, QtCore.Qt.AlignRight|QtCore.Qt.AlignTop)

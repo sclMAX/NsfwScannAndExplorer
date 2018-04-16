@@ -143,13 +143,14 @@ class NsfwScann(QtCore.QThread):
                 Message(file + ' - Video...', True, NORMAL, False))
             self.video_scann.emit(True)
             maxScore = 0
+            isOneSend = False
             cap = cv.VideoCapture(file)
             fps = abs(cap.get(cv.CAP_PROP_FPS))
             fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
             self.video_progress.emit(0, fcount)
             frameToRead = 0
             while cap.isOpened():
-                frameToRead += fps if(fps > 15) else 15
+                frameToRead += fps if(fps * 4 < fcount) else fps // 2
                 if not frameToRead < fcount:
                     frameToRead = fcount
                 cap.set(1, frameToRead - 1)
@@ -158,10 +159,14 @@ class NsfwScann(QtCore.QThread):
                     frame = cv.resize(frame, (256, 256))
                     pi = Image.fromarray(frame)
                     score, _ = self.__scannImage(pi)
-                    if score >= self.minScore:
+                    if score >= self.minScore or not isOneSend:
                         self.__video_emit(frame, score)
+                        isOneSend = True
                     if score > maxScore:
                         maxScore = score
+                        if fcount > (fps * 60 * 5):
+                            if (self.minScore < 0.50 and maxScore > (self.minScore * 1.3)) or (self.minScore >= 0.50 and maxScore >= self.minScore):
+                                break
                     self.video_progress.emit(frameToRead, -1)
                     if frameToRead >= fcount:
                         break
@@ -180,7 +185,7 @@ class NsfwScann(QtCore.QThread):
             inputblob = cv.dnn.blobFromImage(
                 img_na, 1., (224, 224), (104, 117, 123), False, False)
             return (self.__getScore(inputblob), img)
-        except (ValueError, SyntaxError, OSError, TypeError):
+        except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
             return (-1, None)
 
     def getScore(self, file_path: str):
