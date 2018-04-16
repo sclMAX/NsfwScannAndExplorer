@@ -119,7 +119,9 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def btnScanner_Click(self):
         self.dlgScann = DlgScanner(self)
-        self.dlgScann.exec_()
+        if self.dlgScann.exec_():
+            self.vic_file = self.dlgScann.saveFile
+            self.__loadReportFile()
 
     def btnOpen_Click(self):
         self.vic_file, _ = QtWidgets.QFileDialog.getOpenFileName(self, caption='Abrir Reporte...', filter='*.json')
@@ -267,5 +269,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 updateMedia(newVIC, self.media)
                 json.dump(newVIC, open(self.save_file, 'w'))
                 self.setProgressStatus('Reporte guardado en %s' % self.save_file)
+                return True
             finally:
                 self.setEnabled(True)
+        return False

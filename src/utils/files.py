@@ -54,18 +54,18 @@ class ImagesFinder(QtCore.QThread):
             self.totalImages, self.totalFiles, secondsToHMS(et), fs)
         self.statusBar.emit(txt)
 
-    def __isValidFile(self, file: str):
+    def __isValidFile(self, file_path: str):
         try:
             validTypes = ['raster-image', 'raw-image', 'vector-image', 'video']
-            with open(file, "rb") as file:
+            with open(file_path, "rb") as file:
                 fileInfo = fleep.get(file.read(128))
             filetype = fileInfo.type
             if filetype:
                 for t in validTypes:
                     if t in filetype:
                         return (t, fileInfo.extension[0])
-            return None
-        except IOError:
+            return (None, None)
+        except (IOError, TypeError):
             return (None, None)
 
     def __findImages(self, path: str):
@@ -78,7 +78,7 @@ class ImagesFinder(QtCore.QThread):
             if x.is_file():
                 try:
                     self.totalFiles += 1
-                    fileType, fileExtension = self.__isValidFile(x)
+                    fileType, fileExtension = self.__isValidFile(str(x))
                     if not fileType:
                         continue
                     self.totalImages += 1
