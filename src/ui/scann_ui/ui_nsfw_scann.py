@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'src/ui/scann_ui/ui_nsfw_scann.ui'
+# Form implementation generated from reading ui file 'scann_ui/ui_nsfw_scann.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -8,6 +8,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from src.ui import resources_rc
+
 
 class Ui_dlgNsfwScanner(object):
     def setupUi(self, dlgNsfwScanner):
@@ -537,4 +538,3 @@ class Ui_dlgNsfwScanner(object):
         self.btnAceptar.setStatusTip(_translate("dlgNsfwScanner", "Cerrar."))
         self.btnClose.setStatusTip(_translate("dlgNsfwScanner", "Cerrar."))
         self.logImages.setTitle(_translate("dlgNsfwScanner", "Ultimos Nsfw --->"))
-

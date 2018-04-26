@@ -117,6 +117,32 @@
         </spacer>
        </item>
        <item>
+        <widget class="QToolButton" name="btnDeleteAll">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Borrar todas de la pagina actual.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../resources.qrc">
+           <normaloff>:/iconos/cancel</normaloff>:/iconos/cancel</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>48</width>
+           <height>48</height>
+          </size>
+         </property>
+         <property name="arrowType">
+          <enum>Qt::NoArrow</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QToolButton" name="btnUndo">
          <property name="enabled">
           <bool>false</bool>
@@ -189,8 +215,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>989</width>
-             <height>503</height>
+             <width>985</width>
+             <height>556</height>
             </rect>
            </property>
            <property name="layoutDirection">
@@ -483,29 +509,6 @@
      </layout>
     </item>
    </layout>
-  </widget>
-  <widget class="QStatusBar" name="statusbar">
-   <property name="mouseTracking">
-    <bool>false</bool>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="toolTipDuration">
-    <number>0</number>
-   </property>
-   <property name="statusTip">
-    <string/>
-   </property>
-   <property name="whatsThis">
-    <string/>
-   </property>
-   <property name="autoFillBackground">
-    <bool>false</bool>
-   </property>
-   <property name="sizeGripEnabled">
-    <bool>true</bool>
-   </property>
   </widget>
  </widget>
  <resources>

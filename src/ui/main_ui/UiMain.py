@@ -5,24 +5,25 @@ from src.ui.scann_ui.UiScann import DlgScanner, QtWidgets, QtCore, QtGui
 from src.Nsfw.vic13 import readVICFromFile, getMediaFormVIC, updateMedia
 from src.ui.main_ui.NsfwCard import NsfwCard
 
+
 class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
     resized: QtCore.pyqtSignal = QtCore.pyqtSignal()
     dlgScann: DlgScanner
     vic_file: str
     save_file: str
     VIC: dict = None
-    #Media Vars
+    # Media Vars
     media: list = []
     filter_media: list = []
     undo_media: list = []
     isChanged: bool = False
-    #Filter Vars
+    # Filter Vars
     isFilterChange: bool = True
     filter_value: float = 0.15
     isFiltered: bool = False
     isFilterInvert: bool = False
 
-    #Cards Vars
+    # Cards Vars
     cards_list: list = []
     current_page: int = 1
     total_pages: int = 0
@@ -42,10 +43,12 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnOpen.clicked.connect(self.btnOpen_Click)
         self.btnSave.clicked.connect(self.btnSave_click)
         self.btnUndo.clicked.connect(self.undo)
+        self.btnDeleteAll.clicked.connect(self.btnDeleteAll_click)
         self.resized.connect(self.__updateView)
 
     oldDir = 0
     whellCount = 0
+
     def wheelEvent(self, event: QtGui.QWheelEvent):
         direction = event.angleDelta().y()
         if direction != self.oldDir:
@@ -65,7 +68,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def changeFilterScore(self):
         fv = self.pgbFiltro.value()
-        self.filter_value = fv /100
+        self.filter_value = fv / 100
         tf = '< ' if self.isFilterInvert else '> '
         self.lblFiltro.setText('%s%d%s' % (tf, fv, '%'))
         self.isFilterChange = True
@@ -107,7 +110,20 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def update_lbls(self):
         self.lblPages.setText('%d/%d' % (self.current_page, self.total_pages))
-        self.lblSelCount.setText('%d/%d' % (self.viewCards, len(self.filter_media)) + (' [F]' if self.isFiltered else ''))
+        self.lblSelCount.setText(
+            '%d/%d' % (self.viewCards, len(self.filter_media)) + (' [F]' if self.isFiltered else ''))
+
+    def btnDeleteAll_click(self):
+        for card in self.cards_list:
+            if card.data in self.media:
+                self.media.remove(card.data)
+            if card.data in self.filter_media:
+                self.filter_media.remove(card.data)
+            self.undo_media.append(card.data)
+        self.isChanged = True
+        self.btnSave.setEnabled(self.isChanged)
+        self.btnUndo.setEnabled(len(self.undo_media) > 0)
+        self.__updateView()
 
     def btnListUp_click(self):
         if self.setCurrentPage(self.current_page - 1):
@@ -124,11 +140,13 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.__loadReportFile()
 
     def btnOpen_Click(self):
-        self.vic_file, _ = QtWidgets.QFileDialog.getOpenFileName(self, caption='Abrir Reporte...', filter='*.json')
+        self.vic_file, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, caption='Abrir Reporte...', filter='*.json')
         self.__loadReportFile()
 
     def btnSave_click(self):
-        self.save_file, _ = QtWidgets.QFileDialog.getSaveFileName(self, caption='Gardar Reporte...', filter='*.json')
+        self.save_file, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, caption='Gardar Reporte...', filter='*.json')
         self.saveReport()
 
     def setStatus(self, msg):
@@ -151,7 +169,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.progressBar.setVisible(True)
             self.progressBar.setMaximum(total)
             for media in self.media:
-                self.setProgressStatus('Analizando %d de %d...' % (count, total))
+                self.setProgressStatus(
+                    'Analizando %d de %d...' % (count, total))
                 count += 1
                 self.progressBar.setValue(count)
                 try:
@@ -219,12 +238,16 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.clearCardList()
                 return
             self.listView.setEnabled(False)
+            self.groupBox.setEnabled(False)
             col, row, cardW, cardH = (0, 0, 200, 200)
             width, height = (self.listView.width(), self.listView.height())
-            colums, rows = (round(width / (cardW + 10)), round(height / (cardH + 10)))
+            colums, rows = (round(width / (cardW + 10)),
+                            round(height / (cardH + 10)))
             cards_for_page = colums * rows
-            complet_pages, incomplet_page = divmod(len(self.filter_media), cards_for_page)
+            complet_pages, incomplet_page = divmod(
+                len(self.filter_media), cards_for_page)
             self.total_pages = complet_pages + 1 if(incomplet_page > 0)else 0
+            self.btnDeleteAll.setEnabled(self.total_pages > 0)
             page_media = self.getPageMedia(cards_for_page)
             self.clearCardList()
             base_path = str(Path(self.vic_file).parent)
@@ -234,7 +257,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             count: int = 0
             for item in page_media:
                 count += 1
-                self.setProgressStatus('Creando muestra %d de %d...' % (count, total))
+                self.setProgressStatus(
+                    'Creando muestra %d de %d...' % (count, total))
                 item = NsfwCard(self.listView, item, cardW, cardH, base_path)
                 item.remove_me.connect(self.card_remove_me)
                 self.cards_list.append(item)
@@ -252,6 +276,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.update_lbls()
         finally:
             self.listView.setEnabled(True)
+            self.groupBox.setEnabled(True)
 
     def __loadReportFile(self):
         if self.vic_file:
@@ -268,7 +293,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 newVIC = self.VIC.copy()
                 updateMedia(newVIC, self.media)
                 json.dump(newVIC, open(self.save_file, 'w'))
-                self.setProgressStatus('Reporte guardado en %s' % self.save_file)
+                self.setProgressStatus(
+                    'Reporte guardado en %s' % self.save_file)
                 return True
             finally:
                 self.setEnabled(True)
