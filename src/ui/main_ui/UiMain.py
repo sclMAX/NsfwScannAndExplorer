@@ -4,6 +4,7 @@ from src.ui.main_ui.ui_main import Ui_MainWindow
 from src.ui.scann_ui.UiScann import DlgScanner, QtWidgets, QtCore, QtGui
 from src.Nsfw.vic13 import readVICFromFile, getMediaFormVIC, updateMedia
 from src.ui.main_ui.NsfwCard import NsfwCard
+from src.fsi.vic_sim_sort import VICMediaSimSort
 
 
 class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -29,9 +30,14 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
     total_pages: int = 0
     viewCards: int = 0
 
+    #Sort Vic Vars
+    image_to_find_file: str = ''
+    isInSortProcess: bool = False
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.VICSort: VICMediaSimSort = None
         self.progressBar.setVisible(False)
         self.btnListUp.clicked.connect(self.btnListUp_click)
         self.btnListDown.clicked.connect(self.btnListDown_click)
@@ -44,6 +50,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnSave.clicked.connect(self.btnSave_click)
         self.btnUndo.clicked.connect(self.undo)
         self.btnDeleteAll.clicked.connect(self.btnDeleteAll_click)
+        self.btnOpenImage.clicked.connect(self.btnOpenImage_click)
+        self.btnSortVIC.clicked.connect(self.btnSortVIC_click)
         self.resized.connect(self.__updateView)
 
     oldDir = 0
@@ -124,6 +132,58 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnSave.setEnabled(self.isChanged)
         self.btnUndo.setEnabled(len(self.undo_media) > 0)
         self.__updateView()
+
+    def btnOpenImage_click(self):
+        self.image_to_find_file, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, caption='Abrir Imagen a Buscar...', filter='*.jpg; *.jpeg; *.bmp; *.png')
+        if self.image_to_find_file:
+            self.lblImageToFind.setPixmap(QtGui.QPixmap(self.image_to_find_file))
+            self.lblImageToFind.repaint()
+            self.btnSortVIC.setEnabled(True)
+        else:
+            self.btnSortVIC.setEnabled(False)
+
+    def btnSortVIC_click(self):
+        if self.image_to_find_file and self.VIC:
+            try:
+                self.isInSortProcess = True
+                self.__updateView()
+                self.groupBox.setEnabled(False)
+                self.listView.setEnabled(False)
+                self.VICSort = VICMediaSimSort(self, self.image_to_find_file, self.media)
+                self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
+                self.VICSort.status.connect(self.__VICMediaSimSort_status)
+                self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
+                self.VICSort.start()
+            except:
+                self.groupBox.setEnabled(True)
+                self.listView.setEnabled(True)
+                self.isInSortProcess = False
+            #TODO CONTROL ERRORES VICMediaSORT
+        else:
+            self.btnSortVIC.setEnabled(False)
+
+    def __VICMediaSimSort_progress(self, value: int, maximun: int):
+        if maximun > -1:
+            self.progressBar.setVisible(True)
+            self.progressBar.setMaximum(maximun)
+            self.progressBar.setValue(value)
+        else:
+            self.progressBar.setVisible(False)
+
+    def __VICMediaSimSort_status(self, msg: str):
+        self.lblProgress.setVisible(True)
+        self.lblProgress.setText(msg)
+        self.lblProgress.repaint()
+
+    def __VICMediaSimSort_finish(self, sorted_media: list):
+        self.groupBox.setEnabled(True)
+        self.listView.setEnabled(True)
+        self.isInSortProcess = False
+        if sorted_media:
+            self.media = sorted_media
+            self.isFilterChange = True
+            self.__updateView()
 
     def btnListUp_click(self):
         if self.setCurrentPage(self.current_page - 1):
@@ -231,12 +291,21 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
     def __updateView(self):
         if not self.VIC:
             self.clearCardList()
+            self.btnSortVIC.setEnabled(False)
+            return
+        if self.isInSortProcess:
+            self.clearCardList()
             return
         try:
             self.__filterMedia()
             if not self.filter_media:
                 self.clearCardList()
+                self.btnSortVIC.setEnabled(False)
                 return
+            if self.image_to_find_file:
+                self.btnSortVIC.setEnabled(True)
+            else:
+                self.btnSortVIC.setEnabled(False)
             self.listView.setEnabled(False)
             self.groupBox.setEnabled(False)
             col, row, cardW, cardH = (0, 0, 200, 200)

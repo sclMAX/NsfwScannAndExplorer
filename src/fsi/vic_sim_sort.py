@@ -1,20 +1,25 @@
+
+from time import time
+import numpy as np
+from PyQt5 import QtCore
 from keras.models import Model
+from keras.preprocessing import image
+from src.utils.imagenet_utils import preprocess_input
 from src.fsi.vgg19 import VGG19
 from src.fsi.kNN import kNN
 from src.utils.sort_utils import find_topk_unique
+from src.utils.formats import secondsToHMS
 
 class ImageCNN(object):
     def __init__(self, img_file: str, target_size: tuple):
         self.__file_path: str = img_file
         self.__cnn_img = None
+        self.mediaItem = None
         self.width, self.height = target_size
         self.__processImg()
         self.features = None
 
     def __processImg(self):
-        import numpy as np
-        from keras.preprocessing import image
-        from src.utils.imagenet_utils import preprocess_input
         # Read image file
         __img = image.load_img(self.__file_path, target_size=(
             self.width, self.height))  # load
@@ -29,69 +34,84 @@ class ImageCNN(object):
     def getData(self):
         return self.__cnn_img
 
-class VICMediaSimSort(object):
 
-    def __init__(self):
-        self.query_img: ImageCNN = None
-        self.VICMedia: list = None
+class VICMediaSimSort(QtCore.QThread):
+    #Signals
+    finish: QtCore.pyqtSignal = QtCore.pyqtSignal(list)
+    progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int, int) #value, maximum
+    status: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
+
+    def __init__(self, parent: QtCore.QObject, query_img_file: str, media: list):
+        super().__init__(parent)
+        self.query_img: ImageCNN = ImageCNN(query_img_file, (224, 224))
+        self.VICMedia: list = media
         self.__img_list: list = []
         self.__model: Model = None
+        self.__knn: kNN = None
+        self.__X = None
 
     def __loadModel(self):
+        self.status.emit('Cargando Modelo...')
         base_model = VGG19(weights='imagenet')
-        self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
+        self.__model = Model(inputs=base_model.input,
+                             outputs=base_model.get_layer('block4_pool').output)
+        self.status.emit('Modelo Cargado!')
 
     def __loadAllImages(self):
-        if not self.model:
+        if not self.__model:
             self.__loadModel()
+        self.__X = []
+        self.__img_list.clear()
+        self.query_img.features = self.__model.predict(
+            self.query_img.getData()).flatten()
+        self.__X.append(self.query_img.features)
+        self.__img_list.append(self.query_img)
+        count: int = 0
+        total: int = len(self.VICMedia)
+        self.progress.emit(count, total)
         for item in self.VICMedia:
             try:
+                count += 1
+                self.progress.emit(count, total)
                 img_file = str(item['RelativeFilePath']).replace('\\', '/')
+                self.status.emit('Cargando Imagen %d de %d => %s' % (count, total, img_file))
                 img = ImageCNN(img_file, (224, 224))
                 img.features = self.__model.predict(img.getData()).flatten()
+                img.mediaItem = item
+                self.__X.append(img.features)
                 self.__img_list.append(img)
-            except ValueError:
+            except (ValueError, OSError):
                 continue
+        self.__X = np.array(self.__X)
 
-    def emitStatus(self):
-        pass
+    def __loadKNN(self, n_neighbors: int):
+        self.__knn = kNN()
+        self.__knn.compile(n_neighbors=n_neighbors,
+                           algorithm="brute", metric="cosine")
+        self.__knn.fit(self.__X)
 
-    def sortData(self, query_img: ImageCNN, media: list):
-        self.query_img = query_img
-        self.__img_list.clear()
-        self.__img_list.append(self.query_img)
-        self.VICMedia = media
+    def run(self):
+        ti = time()
         self.__loadAllImages()
-
-
-''' X.append(features)  # append feature extractor
-
-    X = np.array(X)  # feature vectors
-    imgs = np.array(imgs)  # images
-    print("imgs.shape = {}".format(imgs.shape))
-    print("X_features.shape = {}\n".format(X.shape))
-
-    # ===========================
-    # Find k-nearest images to each image
-    # ===========================
-    n_neighbours = 10  # +1 as itself is most similar
-    knn = kNN()  # kNN model
-    knn.compile(n_neighbors=n_neighbours, algorithm="brute", metric="cosine")
-    knn.fit(X)
-
-    # ==================================================
-    # Plot recommendations for each image in database
-    # ==================================================
-    output_rec_dir = os.path.join("output", "rec")
-    if not os.path.exists(output_rec_dir):
-        os.makedirs(output_rec_dir)
-    n_imgs = len(imgs)
-    ypixels, xpixels = imgs[0].shape[0], imgs[0].shape[1]
-   # for ind_query in range(n_imgs):
-    ind_query = 0
-    # Find top-k closest image feature vectors to each vector
-    print("[{}/{}] Plotting similar image recommendations for: {}".format(ind_query+1, n_imgs, filename_heads[ind_query]))
-    distances, indices = knn.predict(np.array([X[ind_query]]))
-    distances = distances.flatten()
-    indices = indices.flatten()
-    indices, distances = find_topk_unique(indices, distances, n_neighbours) '''
+        n_neighbors = len(self.__X)
+        self.status.emit('Procesando Imagenes...')
+        self.__loadKNN(n_neighbors)
+        distances, indices = self.__knn.predict([self.query_img.features])
+        distances = distances.flatten()
+        indices = indices.flatten()
+        indices, distances = find_topk_unique(indices, distances, n_neighbors)
+        resultMedia: list = []
+        count: int = 0
+        total: int = len(indices)
+        self.process.emit(count, total)
+        for idx in indices:
+            count += 1
+            self.status.emit('Reordenando Imagen %d de %d...' % (count, total))
+            self.process.emit(count, total)
+            img = self.__img_list[idx]
+            self.VICMedia.remove(img.mediaItem)
+            resultMedia.append(img.mediaItem)
+        resultMedia.extend(self.VICMedia)
+        self.status.emit('Proceso terminado en %s!' % secondsToHMS(time() - ti))
+        self.process.emit(0, -1)
+        self.finish.emit(resultMedia)
