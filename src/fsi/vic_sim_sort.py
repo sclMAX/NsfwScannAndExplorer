@@ -9,6 +9,7 @@ from src.fsi.vgg19 import VGG19
 from src.fsi.kNN import kNN
 from src.utils.sort_utils import find_topk_unique
 from src.utils.formats import secondsToHMS
+import keras.backend as K
 
 class ImageCNN(object):
     def __init__(self, img_file: str, target_size: tuple):
@@ -40,6 +41,7 @@ class VICMediaSimSort(QtCore.QThread):
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(list)
     progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int, int) #value, maximum
     status: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
+    
 
     def __init__(self, parent: QtCore.QObject, query_img_file: str, media: list):
         super().__init__(parent)
@@ -49,9 +51,11 @@ class VICMediaSimSort(QtCore.QThread):
         self.__model: Model = None
         self.__knn: kNN = None
         self.__X = None
+        self.tInicio = 0
 
     def __loadModel(self):
         self.status.emit('Cargando Modelo...')
+        K.clear_session()
         base_model = VGG19(weights='imagenet')
         self.__model = Model(inputs=base_model.input,
                              outputs=base_model.get_layer('block4_pool').output)
@@ -62,21 +66,25 @@ class VICMediaSimSort(QtCore.QThread):
             self.__loadModel()
         self.__X = []
         self.__img_list.clear()
-        self.query_img.features = self.__model.predict(
-            self.query_img.getData()).flatten()
+        self.query_img.features = np.array(self.__model.predict(
+            self.query_img.getData()).flatten())
         self.__X.append(self.query_img.features)
         self.__img_list.append(self.query_img)
         count: int = 0
         total: int = len(self.VICMedia)
         self.progress.emit(count, total)
+        tInicioProceso = time()
         for item in self.VICMedia:
             try:
                 count += 1
                 self.progress.emit(count, total)
                 img_file = str(item['RelativeFilePath']).replace('\\', '/')
-                self.status.emit('Cargando Imagen %d de %d => %s' % (count, total, img_file))
+                et = time() - tInicioProceso
+                fs = count / et if et >0 else 1
+                eta: str = secondsToHMS((total - count) * (et / count))
+                self.status.emit('Procesando Imagen %d de %d (ETA: %s @%.2f i/s) => %s' % (count, total, eta, fs, img_file))
                 img = ImageCNN(img_file, (224, 224))
-                img.features = self.__model.predict(img.getData()).flatten()
+                img.features =np.array(self.__model.predict(img.getData()).flatten())
                 img.mediaItem = item
                 self.__X.append(img.features)
                 self.__img_list.append(img)
@@ -91,27 +99,29 @@ class VICMediaSimSort(QtCore.QThread):
         self.__knn.fit(self.__X)
 
     def run(self):
-        ti = time()
+        self.tInicio = time()
         self.__loadAllImages()
         n_neighbors = len(self.__X)
         self.status.emit('Procesando Imagenes...')
         self.__loadKNN(n_neighbors)
-        distances, indices = self.__knn.predict([self.query_img.features])
+        distances, indices = self.__knn.predict(np.array([self.query_img.features]))
         distances = distances.flatten()
         indices = indices.flatten()
         indices, distances = find_topk_unique(indices, distances, n_neighbors)
         resultMedia: list = []
+        imgs =  indices[0]
         count: int = 0
-        total: int = len(indices)
-        self.process.emit(count, total)
-        for idx in indices:
+        total: int = len(imgs)
+        self.progress.emit(count, total)
+        for idx in imgs:
+            img = self.__img_list[idx]
             count += 1
             self.status.emit('Reordenando Imagen %d de %d...' % (count, total))
-            self.process.emit(count, total)
-            img = self.__img_list[idx]
-            self.VICMedia.remove(img.mediaItem)
-            resultMedia.append(img.mediaItem)
+            self.progress.emit(count, total)
+            if img.mediaItem in self.VICMedia:
+                self.VICMedia.remove(img.mediaItem)
+                resultMedia.append(img.mediaItem)
         resultMedia.extend(self.VICMedia)
-        self.status.emit('Proceso terminado en %s!' % secondsToHMS(time() - ti))
-        self.process.emit(0, -1)
+        self.status.emit('Proceso terminado en %s!' % secondsToHMS(time() - self.tInicio))
+        self.progress.emit(0, -1)
         self.finish.emit(resultMedia)

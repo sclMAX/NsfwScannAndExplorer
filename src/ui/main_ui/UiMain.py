@@ -142,6 +142,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.btnSortVIC.setEnabled(True)
         else:
             self.btnSortVIC.setEnabled(False)
+            self.lblImageToFind.setPixmap(QtGui.QPixmap(None))
 
     def btnSortVIC_click(self):
         if self.image_to_find_file and self.VIC:
@@ -150,6 +151,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.__updateView()
                 self.groupBox.setEnabled(False)
                 self.listView.setEnabled(False)
+                self.gbBuscarImagen.setEnabled(False)
                 self.VICSort = VICMediaSimSort(self, self.image_to_find_file, self.media)
                 self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
                 self.VICSort.status.connect(self.__VICMediaSimSort_status)
@@ -158,6 +160,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             except:
                 self.groupBox.setEnabled(True)
                 self.listView.setEnabled(True)
+                self.gbBuscarImagen.setEnabled(True)
                 self.isInSortProcess = False
             #TODO CONTROL ERRORES VICMediaSORT
         else:
@@ -179,8 +182,10 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
     def __VICMediaSimSort_finish(self, sorted_media: list):
         self.groupBox.setEnabled(True)
         self.listView.setEnabled(True)
+        self.gbBuscarImagen.setEnabled(True)
         self.isInSortProcess = False
         if sorted_media:
+            self.btnSortVIC.setEnabled(False)
             self.media = sorted_media
             self.isFilterChange = True
             self.__updateView()
