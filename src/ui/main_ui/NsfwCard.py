@@ -13,6 +13,7 @@ class NsfwCard(QtWidgets.QFrame):
     remove_me: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
 
     # Gif and Video
+    isAnimated: bool = False
     cap = None
     frames: int = 0
     currentFrame: int = 0
@@ -21,10 +22,11 @@ class NsfwCard(QtWidgets.QFrame):
     __timer: QtCore.QTimer = QtCore.QTimer()
 
 
-    def __init__(self, parent, media_item, width: int, height: int, base_path: str):
+    def __init__(self, parent, media_item, width: int, height: int, base_path: str, isAnimated: bool):
         super().__init__(parent)
         self.data = media_item
         self.base_path = base_path
+        self.isAnimated = isAnimated
         self.__setup(width, height)
         self.self_btnOpen.clicked.connect(self.btnOpen_click)
         self.self_btnRemove.clicked.connect(self.btnRemove_click)
@@ -47,6 +49,8 @@ class NsfwCard(QtWidgets.QFrame):
     def getImage(self):
         file_path = self.getFilePath()
         if file_path:
+            if not self.isAnimated:
+                return QtGui.QPixmap(file_path)
             file_type = self.data.get('FileType')
             file_Extension = self.data.get('FileExtension')
             if file_type and 'video' in file_type:

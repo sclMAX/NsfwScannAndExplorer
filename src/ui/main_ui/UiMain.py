@@ -29,8 +29,9 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
     current_page: int = 1
     total_pages: int = 0
     viewCards: int = 0
+    isAnimated: bool = False
 
-    #Sort Vic Vars
+    # Sort Vic Vars
     image_to_find_file: str = ''
     isInSortProcess: bool = False
 
@@ -48,6 +49,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnScanner.clicked.connect(self.btnScanner_Click)
         self.btnOpen.clicked.connect(self.btnOpen_Click)
         self.btnSave.clicked.connect(self.btnSave_click)
+        self.btnAnimated.clicked.connect(self.btnAnimated_click)
         self.btnUndo.clicked.connect(self.undo)
         self.btnDeleteAll.clicked.connect(self.btnDeleteAll_click)
         self.btnOpenImage.clicked.connect(self.btnOpenImage_click)
@@ -94,6 +96,10 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.slrFiltro.setEnabled(not self.isFiltered)
         self.__updateView()
 
+    def btnAnimated_click(self):
+        self.isAnimated = not self.isAnimated
+        self.__updateView()
+
     def setCurrentPage(self, page: int):
         if (page <= self.total_pages) and (page > 0):
             self.current_page = page
@@ -135,9 +141,10 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def btnOpenImage_click(self):
         self.image_to_find_file, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, caption='Abrir Imagen a Buscar...', filter='*.jpg; *.jpeg; *.bmp; *.png')
+            self, caption='Abrir Imagen a Buscar...', filter='*.jpg; *.jpeg; *.png')
         if self.image_to_find_file:
-            self.lblImageToFind.setPixmap(QtGui.QPixmap(self.image_to_find_file))
+            self.lblImageToFind.setPixmap(
+                QtGui.QPixmap(self.image_to_find_file))
             self.lblImageToFind.repaint()
             self.btnSortVIC.setEnabled(True)
         else:
@@ -152,17 +159,27 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.groupBox.setEnabled(False)
                 self.listView.setEnabled(False)
                 self.gbBuscarImagen.setEnabled(False)
-                self.VICSort = VICMediaSimSort(self, self.image_to_find_file, self.media)
+                vicFile = Path(self.vic_file)
+                features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.dat'))
+                self.VICSort = VICMediaSimSort(
+                    parent=self,
+                    query_img_file=self.image_to_find_file,
+                    media=self.media,
+                    features_file=features_file
+                )
                 self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
                 self.VICSort.status.connect(self.__VICMediaSimSort_status)
                 self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
                 self.VICSort.start()
-            except:
+            except IOError:
+                self.__VICMediaSimSort_status('Formato de Archivo no soportado!')
+                self.btnSortVIC.setEnabled(False)
+                self.lblImageToFind.setPixmap(QtGui.QPixmap(None))
                 self.groupBox.setEnabled(True)
                 self.listView.setEnabled(True)
                 self.gbBuscarImagen.setEnabled(True)
                 self.isInSortProcess = False
-            #TODO CONTROL ERRORES VICMediaSORT
+                self.__updateView()
         else:
             self.btnSortVIC.setEnabled(False)
 
@@ -175,7 +192,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.progressBar.setVisible(False)
 
     def __VICMediaSimSort_status(self, msg: str):
-        self.lblProgress.setVisible(True)
+        if not self.lblProgress.isVisible():
+            self.lblProgress.setVisible(True)
         self.lblProgress.setText(msg)
         self.lblProgress.repaint()
 
@@ -184,6 +202,9 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.listView.setEnabled(True)
         self.gbBuscarImagen.setEnabled(True)
         self.isInSortProcess = False
+        vicFile = Path(self.vic_file)
+        features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.dat'))
+        self.VICSort.saveFeaturesToFile(features_file)
         if sorted_media:
             self.btnSortVIC.setEnabled(False)
             self.media = sorted_media
@@ -335,7 +356,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 count += 1
                 self.setProgressStatus(
                     'Creando muestra %d de %d...' % (count, total))
-                item = NsfwCard(self.listView, item, cardW, cardH, base_path)
+                item = NsfwCard(self.listView, item, cardW,
+                                cardH, base_path, self.isAnimated)
                 item.remove_me.connect(self.card_remove_me)
                 self.cards_list.append(item)
                 if col >= colums:
