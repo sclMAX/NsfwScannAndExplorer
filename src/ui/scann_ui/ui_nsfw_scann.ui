@@ -260,6 +260,16 @@
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QCheckBox" name="chkScannNsfw">
+            <property name="text">
+             <string>Realizar Escaneo Nsfw</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item alignment="Qt::AlignTop">
            <widget class="QCheckBox" name="chkShowImage">
             <property name="toolTip">

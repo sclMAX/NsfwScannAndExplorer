@@ -19,6 +19,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
 
     isInScann: bool = False
     isScannFinish: bool = False
+    isScannNsfw: bool = True
 
     timer: QtCore.QTimer = QtCore.QTimer()
     charId: int = 0
@@ -55,6 +56,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.btnVIC.clicked.connect(self.btnVIC_Click)
         self.btnSave.clicked.connect(self.btnSave_Click)
         self.btnPause.clicked.connect(self.nsfw.pause)
+        self.chkScannNsfw.stateChanged.connect(self.chkScannNsfw_stateChanged)
         self.chkShowImage.stateChanged.connect(self.showImage)
         self.chkGif_as_frame.stateChanged.connect(self.nsfw.setGif_as_frame)
 
@@ -64,6 +66,9 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.lblProgressBar.setVisible(isShow)
         self.txtLog.setVisible(isShow)
         self.repaint()
+
+    def chkScannNsfw_stateChanged(self):
+        self.isScannNsfw = self.chkScannNsfw.isChecked() > 0
 
     def showImage(self):
         if not self.chkShowImage.isChecked() > 0:
@@ -264,7 +269,10 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
     def ImagesFinder_Finish(self, media: list):
         if media:
             updateMedia(self.VIC, media)
-            self.nsfw.scannVIC(self.VIC, '', self.saveFolder)
+            if self.isScannNsfw:
+                self.nsfw.scannVIC(self.VIC, '', self.saveFolder)
+            else:
+                self.nsfw_finish(media)
         else:
             self.setBtnsEnabled(True)
             self.isInScann = False

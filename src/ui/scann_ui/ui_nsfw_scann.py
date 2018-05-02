@@ -9,7 +9,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from src.ui import resources_rc
 
-
 class Ui_dlgNsfwScanner(object):
     def setupUi(self, dlgNsfwScanner):
         dlgNsfwScanner.setObjectName("dlgNsfwScanner")
@@ -132,6 +131,10 @@ class Ui_dlgNsfwScanner(object):
         self.groupBox_2.setObjectName("groupBox_2")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.groupBox_2)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.chkScannNsfw = QtWidgets.QCheckBox(self.groupBox_2)
+        self.chkScannNsfw.setChecked(True)
+        self.chkScannNsfw.setObjectName("chkScannNsfw")
+        self.verticalLayout_3.addWidget(self.chkScannNsfw)
         self.chkShowImage = QtWidgets.QCheckBox(self.groupBox_2)
         self.chkShowImage.setChecked(True)
         self.chkShowImage.setObjectName("chkShowImage")
@@ -527,6 +530,7 @@ class Ui_dlgNsfwScanner(object):
         self.btnSave.setToolTip(_translate("dlgNsfwScanner", "Guardar Reporte."))
         self.lblSaveFolder.setText(_translate("dlgNsfwScanner", "Seleccione el Archivo para guaradar el Reporte!"))
         self.groupBox_2.setTitle(_translate("dlgNsfwScanner", "Configuraciones"))
+        self.chkScannNsfw.setText(_translate("dlgNsfwScanner", "Realizar Escaneo Nsfw"))
         self.chkShowImage.setToolTip(_translate("dlgNsfwScanner", "<html><head/><body><p>Muestra una vista previa de las imagenes que esten por sobre la Probabilidad espesificada.</p></body></html>"))
         self.chkShowImage.setText(_translate("dlgNsfwScanner", "Mostrar Nsfw Imagenes"))
         self.chkGif_as_frame.setToolTip(_translate("dlgNsfwScanner", "<html><head/><body><p>Si esta activado escanea los GIF por frames como a los videos, de lo contrario los escanea como imagenes.</p></body></html>"))
@@ -538,3 +542,4 @@ class Ui_dlgNsfwScanner(object):
         self.btnAceptar.setStatusTip(_translate("dlgNsfwScanner", "Cerrar."))
         self.btnClose.setStatusTip(_translate("dlgNsfwScanner", "Cerrar."))
         self.logImages.setTitle(_translate("dlgNsfwScanner", "Ultimos Nsfw --->"))
+

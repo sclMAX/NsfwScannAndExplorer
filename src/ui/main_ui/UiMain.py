@@ -189,6 +189,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.media = sorted_media
             self.isFilterChange = True
             self.__updateView()
+            self.isChanged = True
+            self.btnSave.setEnabled(self.isChanged)
 
     def btnListUp_click(self):
         if self.setCurrentPage(self.current_page - 1):
