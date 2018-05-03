@@ -153,25 +153,25 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def btnSortVIC_click(self):
         if self.image_to_find_file and self.VIC:
-            try:
-                self.isInSortProcess = True
-                self.__updateView()
-                self.groupBox.setEnabled(False)
-                self.listView.setEnabled(False)
-                self.gbBuscarImagen.setEnabled(False)
-                vicFile = Path(self.vic_file)
-                features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.dat'))
-                self.VICSort = VICMediaSimSort(
-                    parent=self,
-                    query_img_file=self.image_to_find_file,
-                    media=self.media,
-                    features_file=features_file
-                )
-                self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
-                self.VICSort.status.connect(self.__VICMediaSimSort_status)
-                self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
-                self.VICSort.start()
-            except IOError:
+            # try:
+            self.isInSortProcess = True
+            self.__updateView()
+            self.groupBox.setEnabled(False)
+            self.listView.setEnabled(False)
+            self.gbBuscarImagen.setEnabled(False)
+            vicFile = Path(self.vic_file)
+            features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.dat'))
+            self.VICSort = VICMediaSimSort(
+                parent=self,
+                query_img_file=self.image_to_find_file,
+                media=self.media,
+                features_file=features_file
+            )
+            self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
+            self.VICSort.status.connect(self.__VICMediaSimSort_status)
+            self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
+            self.VICSort.start()
+            '''   except IOError:
                 self.__VICMediaSimSort_status('Formato de Archivo no soportado!')
                 self.btnSortVIC.setEnabled(False)
                 self.lblImageToFind.setPixmap(QtGui.QPixmap(None))
@@ -179,7 +179,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.listView.setEnabled(True)
                 self.gbBuscarImagen.setEnabled(True)
                 self.isInSortProcess = False
-                self.__updateView()
+                self.__updateView() '''
         else:
             self.btnSortVIC.setEnabled(False)
 

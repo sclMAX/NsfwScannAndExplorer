@@ -1,7 +1,5 @@
 
 from time import time
-from pathlib import Path
-import tempfile
 import pickle
 import numpy as np
 from PyQt5 import QtCore
@@ -16,30 +14,31 @@ from src.utils.formats import secondsToHMS
 
 
 class ImageCNN(object):
-    def __init__(self, mediaItem: dict):
-        self.mediaItem = mediaItem
+    def __init__(self, img_file: str, target_size: tuple):
+        self.__file_path: str = img_file
+        self.__cnn_img = None
+        self.mediaItem = None
+        self.width, self.height = target_size
+        self.__processImg()
         self.features = None
 
     def __processImg(self):
-        __img = image.load_img(self.getFilePath(), target_size=(224, 224))
+        __img = image.load_img(self.__file_path, target_size=(self.width, self.height))
         __img = image.img_to_array(__img)
         __img = np.expand_dims(__img, axis=0)
-        return preprocess_input(__img)
+        self.__cnn_img = preprocess_input(__img)
 
     def getFilePath(self):
-        item = self.mediaItem.get('RelativeFilePath')
-        if item:
-            return str(item).replace('\\', '/')
-        return None
+        return self.__file_path
 
     def getData(self):
-        return self.__processImg()
+        return self.__cnn_img
 
 
 class VICMediaSimSort(QtCore.QThread):
-    # Signals
+    #Signals
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(list)
-    progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int, int)  # value, maximum
+    progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int, int) #value, maximum
     status: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
 
     isFeaturesLoad: bool = False
@@ -48,12 +47,14 @@ class VICMediaSimSort(QtCore.QThread):
         super().__init__(parent)
         self.status.emit('INICIANDO PROCESO...')
         self.__X = []
-        self.query_img: ImageCNN = ImageCNN({'RelativeFilePath':query_img_file})
+        self.query_img: ImageCNN = ImageCNN(query_img_file, (224, 224))
         self.VICMedia: list = media
         self.__img_list: list = []
         self.__model: Model = None
         self.__knn: kNN = None
         self.tInicio = 0
+        self.__setFeatures(self.query_img)
+        self.__X.append(self.query_img.features)
         if features_file:
             self.loadFeaturesFromFile(features_file)
 
@@ -79,21 +80,25 @@ class VICMediaSimSort(QtCore.QThread):
             try:
                 count += 1
                 self.progress.emit(count, total)
-                img = ImageCNN(item)
+                img_file = str(item['RelativeFilePath']).replace('\\', '/')
                 et = time() - tInicioProceso
                 fs = count / et if et > 0 else 1
                 eta: str = secondsToHMS((total - count) * (et / count))
-                self.status.emit(
-                    'Procesando Archivo %d de %d (ETA: %s @%.2f a/s) => %s' % (count, total, eta, fs, img.getFilePath()))
+                self.status.emit('Procesando Archivo %d de %d (ETA: %s @%.2f a/s) => %s' % (count, total, eta, fs, img_file))
+                img = ImageCNN(img_file, (224, 224))
                 self.__setFeatures(img)
+                img.mediaItem = item
+                self.__X.append(img.features)
                 self.__img_list.append(img)
             except (ValueError, OSError):
                 continue
+        self.__X = np.array(self.__X)
 
     def __loadKNN(self, n_neighbors: int):
         self.__knn = kNN()
         self.__knn.compile(n_neighbors=n_neighbors,
                            algorithm="brute", metric="cosine")
+        self.__knn.fit(self.__X)
 
     def saveFeaturesToFile(self, file_path: str):
         with open(file_path, 'wb') as f:
@@ -104,6 +109,14 @@ class VICMediaSimSort(QtCore.QThread):
         try:
             with open(file_path, 'rb') as f:
                 self.__img_list = pickle.load(f)
+                self.__X = []
+            total: int = len(self.__img_list)
+            count: int = 0
+            for img in self.__img_list:
+                count += 1
+                self.__X.append(img.features)
+                self.progress.emit(count, total)
+            self.__X = np.array(self.__X)
             self.isFeaturesLoad = True
         except IOError:
             self.isFeaturesLoad = False
@@ -112,22 +125,13 @@ class VICMediaSimSort(QtCore.QThread):
 
     def run(self):
         self.tInicio = time()
-        self.__setFeatures(self.query_img)
         self.__img_list.append(self.query_img)
         if not self.isFeaturesLoad:
             self.__loadAllImages()
-        totalItems = len(self.__img_list)
-        n_neighbors = totalItems if totalItems < 50 else 50
+        totalItems =  len(self.__X)
+        n_neighbors = totalItems if totalItems < 30 else 30
         self.status.emit('Procesando Imagenes...')
         self.__loadKNN(n_neighbors)
-        x_file = tempfile.TemporaryFile()
-        X = np.memmap(x_file, mode='w+', shape=(totalItems, self.query_img.features.shape[0]))
-        Xidx: int = 0
-        for item in self.__img_list:
-            X[Xidx] = item.features
-            Xidx += 1
-        self.__knn.fit(X)
-        x_file.close()
         distances, indices = self.__knn.predict(np.array([self.query_img.features]))
         distances = distances.flatten()
         indices = indices.flatten()
@@ -147,7 +151,6 @@ class VICMediaSimSort(QtCore.QThread):
                 resultMedia.append(img.mediaItem)
         resultMedia.extend(self.VICMedia)
         self.__img_list.remove(self.query_img)
-        self.status.emit('Proceso terminado en %s!' %
-                         secondsToHMS(time() - self.tInicio))
+        self.status.emit('Proceso terminado en %s!' % secondsToHMS(time() - self.tInicio))
         self.progress.emit(0, -1)
         self.finish.emit(resultMedia)
