@@ -1,16 +1,18 @@
 
 from time import time
+from pathlib import Path
 import tempfile
 import pickle
 import numpy as np
-from pathlib import Path
 from PyQt5 import QtCore
-import cv2 as cv
+from keras.models import Model
+from keras.preprocessing import image
+import keras.backend as K
+from src.utils.imagenet_utils import preprocess_input
+from src.fsi.vgg19 import VGG19
 from src.fsi.kNN import kNN
 from src.utils.sort_utils import find_topk_unique
 from src.utils.formats import secondsToHMS
-
-from src.utils import Image as ImgTools
 
 
 class ImageCNN(object):
@@ -21,10 +23,15 @@ class ImageCNN(object):
     def __processImg(self):
         try:
             file_path: str = self.getFilePath()
-            img = ImgTools.load_img(file_path, target_size=(224, 224))
-            img_array = ImgTools.img_to_array(img)
-            inputblob = cv.dnn.blobFromImage(img_array, 1., (224, 224), (104, 117, 123))
-            return inputblob
+            __img = image.load_img(file_path, target_size=(224, 224))
+            print('read image:', file_path)
+            __img = image.img_to_array(__img)
+            print('TO ARRAY')
+            __img = np.expand_dims(__img, axis=0)
+            print('EXPAND ARRAY')
+            __img = preprocess_input(__img)
+            print('PREPROCESS')
+            return __img
         except:
             print('ERROR read image:', file_path)
             raise
@@ -32,7 +39,7 @@ class ImageCNN(object):
     def getFilePath(self):
         item = self.mediaItem.get('RelativeFilePath')
         if item:
-            return str(Path(str(item).replace('\\', '/')))
+            return str(item).replace('\\', '/')
         print('VIC RelativeFilePath ERROR')
         return None
 
@@ -57,7 +64,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.VICMedia: list = media
         print('ITEMS:', len(media))
         self.__img_list: list = []
-        self.__model: object = None
+        self.__model: Model = None
         self.__knn: kNN = None
         self.tInicio = 0
         if features_file:
@@ -65,18 +72,16 @@ class VICMediaSimSort(QtCore.QThread):
 
     def __loadModel(self):
         self.status.emit('Cargando Modelo...')
-        prototxt = 'model/VGG_ILSVRC_19_layers_deploy.prototxt'
-        caffeModel = 'model/VGG_ILSVRC_19_layers.caffemodel'
-        model_loaded = cv.dnn.readNetFromCaffe(prototxt=prototxt, caffeModel=caffeModel)
-        self.__model = model_loaded
+        K.clear_session()
+        base_model = VGG19(weights='imagenet')
+        self.__model = Model(inputs=base_model.input,
+                             outputs=base_model.get_layer('block4_pool').output)
         self.status.emit('Modelo Cargado!')
 
     def __setFeatures(self, img: ImageCNN):
         if not self.__model:
             self.__loadModel()
-        self.__model.setInput(img.getData())
-        pred = self.__model.forward('pool4').flatten()
-        img.features = np.array(pred)
+        img.features = np.array(self.__model.predict(img.getData()).flatten())
 
     def __loadAllImages(self):
         count: int = 0
