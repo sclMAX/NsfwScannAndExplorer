@@ -211,6 +211,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.btnSortVIC.setEnabled(False)
             self.media = sorted_media
             self.isFilterChange = True
+            self.current_page = 1
             self.__updateView()
             self.isChanged = True
             self.btnSave.setEnabled(self.isChanged)
@@ -383,6 +384,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.lblStatus.setText(self.vic_file)
             self.VIC = readVICFromFile(self.vic_file)
             self.media = getMediaFormVIC(self.VIC)
+            self.current_page = 0
             self.__updateView()
 
     def saveReport(self):

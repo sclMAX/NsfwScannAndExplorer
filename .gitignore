@@ -109,3 +109,4 @@ NewReport.json
 NewReport1.json
 src/Nsfw/Export.json
 src/Nsfw/Export.json
+model/VGG_ILSVRC_19_layers.caffemodel

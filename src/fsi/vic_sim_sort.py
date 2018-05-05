@@ -16,10 +16,13 @@ from src.utils import Image as ImgTools
 
 
 class ImageCNN(object):
+    count: int = 0
     def __init__(self, mediaItem: dict, base_path: str):
         self.mediaItem = mediaItem
         self.base_path = base_path
-        self.features = None
+        self.idx: int = ImageCNN.count
+        ImageCNN.count += 1
+
 
     def __processImg(self):
         try:
@@ -46,31 +49,32 @@ class ImageCNN(object):
         return self.__processImg()
 
 class ListImageCNN(object):
+    
 
-    def __init__(self):
+    def __init__(self, img_list_file: str):
         self.__count: int = 0
-        self.__list_file = shelve.open(tempfile.TemporaryFile())
+        self.__list_file = open(img_list_file, 'r+b')
+        self.__count = len(self.__list_file.keys())
+        self.__next_idx: int = self.__count
 
     def append(self, item: ImageCNN):
-        try:
-            self.__list_file[self.__count] = item
-            self.__count += 1
-            return True
-        except EOFError:
-            return False
+        self.__list_file[str(self.__next_idx)] = item
+        self.__next_idx += 1
 
     def remove(self, index: int):
-        del self.__list_file[index]
+        del self.__list_file[str(index)]
+        self.__count = len(self.__list_file.keys())
 
     def getCount(self):
         return self.__count
 
     def getItemsItr(self):
         for idx in range(self.__count):
-            item = self.getOne(idx)
+            item = self.getOne(str(idx))
             yield item
 
     def getOne(self, index: int):
+        index = str(index)
         if index in self.__list_file.keys():
             return self.__list_file[index]
         return None
@@ -110,7 +114,7 @@ class VICMediaSimSort(QtCore.QThread):
             self.status.emit('Modelo Cargado!')
         except:
             self.status.emit('Faltan archivos para configurar el modelo VGG19!')
-            raise 
+            raise
 
     def __setFeatures(self, img: ImageCNN):
         if not self.__model:
@@ -129,6 +133,8 @@ class VICMediaSimSort(QtCore.QThread):
                 count += 1
                 self.progress.emit(count, total)
                 img = ImageCNN(item, self.base_path)
+                print('COUNT:', ImageCNN.count)
+                print('count:', img.count)
                 et = time() - tInicioProceso
                 fs = count / et if et > 0 else 1
                 eta: str = secondsToHMS((total - count) * (et / count))
