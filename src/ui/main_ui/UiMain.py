@@ -141,7 +141,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def btnOpenImage_click(self):
         self.image_to_find_file, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, caption='Abrir Imagen a Buscar...', filter='*.jpg; *.jpeg; *.png')
+            self, caption='Abrir Imagen a Buscar...', filter='*.jpg *.jpeg *.png')
         if self.image_to_find_file:
             self.lblImageToFind.setPixmap(
                 QtGui.QPixmap(self.image_to_find_file))
@@ -161,11 +161,13 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.gbBuscarImagen.setEnabled(False)
             vicFile = Path(self.vic_file)
             features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.dat'))
+            base_path = str(Path(self.vic_file).parent)
             self.VICSort = VICMediaSimSort(
                 parent=self,
                 query_img_file=self.image_to_find_file,
                 media=self.media,
-                features_file=features_file
+                features_file=features_file,
+                base_path=base_path
             )
             self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
             self.VICSort.status.connect(self.__VICMediaSimSort_status)
