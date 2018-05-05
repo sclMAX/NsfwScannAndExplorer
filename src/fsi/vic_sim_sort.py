@@ -3,7 +3,6 @@ from time import time
 import sys
 import tempfile
 import pickle
-import shelve
 from pathlib import Path
 import numpy as np
 from PyQt5 import QtCore
@@ -20,6 +19,7 @@ class ImageCNN(object):
     def __init__(self, mediaItem: dict, base_path: str):
         self.mediaItem = mediaItem
         self.base_path = base_path
+        self.features = None
         self.idx: int = ImageCNN.count
         ImageCNN.count += 1
 
@@ -49,7 +49,7 @@ class ImageCNN(object):
         return self.__processImg()
 
 class ListImageCNN(object):
-    
+
 
     def __init__(self, img_list_file: str):
         self.__count: int = 0
