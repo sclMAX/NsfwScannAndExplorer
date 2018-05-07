@@ -3,6 +3,7 @@ import webbrowser
 import cv2 as cv
 from PyQt5 import QtGui, QtWidgets, QtCore
 from src.ui import resources_rc
+from src.ui.vic_edit_ui.UiVic_Edit import DlgVicEdit
 
 
 class NsfwCard(QtWidgets.QFrame):
@@ -11,6 +12,7 @@ class NsfwCard(QtWidgets.QFrame):
 
     # Signals
     remove_me: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
+    update_me: QtCore.pyqtSignal = QtCore.pyqtSignal()
 
     # Gif and Video
     isAnimated: bool = False
@@ -25,10 +27,12 @@ class NsfwCard(QtWidgets.QFrame):
     def __init__(self, parent, media_item, width: int, height: int, base_path: str, isAnimated: bool):
         super().__init__(parent)
         self.data = media_item
+        self.dlgEdit: DlgVicEdit = None
         self.base_path = base_path
         self.isAnimated = isAnimated
         self.__setup(width, height)
         self.self_btnOpen.clicked.connect(self.btnOpen_click)
+        self.self_btnEdit.clicked.connect(self.btnEdit_click)
         self.self_btnRemove.clicked.connect(self.btnRemove_click)
 
     def getScore(self):
@@ -58,7 +62,7 @@ class NsfwCard(QtWidgets.QFrame):
             if file_Extension and 'gif' in file_Extension:
                 return self.__processGif(file_path)
             return QtGui.QPixmap(file_path)
-        return QtGui.QPixmap('icons/noimage.gif')
+        return QtGui.QPixmap(':iconos/noimage')
 
     def __processGif(self, file: str):
         import imageio
@@ -74,7 +78,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.__timer.timeout.connect(self.__play)
         self.__timer.start()
         return QtGui.QPixmap(file)
-        
+
     def __processVideo(self, file: str):
         self.cap = cv.VideoCapture(file)
         self.frames = abs(self.cap.get(cv.CAP_PROP_FRAME_COUNT))
@@ -82,7 +86,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.__timer.setInterval(100)
         self.__timer.timeout.connect(self.__play)
         self.__timer.start()
-        return QtGui.QPixmap('icons/noimage.gif')
+        return QtGui.QPixmap(':iconos/noimage')
 
     def __play(self):
         if self.cap and self.cap.isOpened:
@@ -131,6 +135,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_buttons = QtWidgets.QHBoxLayout(self.horizontalFrame)
         self.self_buttons.setContentsMargins(2, 2, 2, 2)
         self.self_buttons.setSpacing(2)
+        #btnOpen
         self.self_btnOpen = QtWidgets.QToolButton(self.horizontalFrame)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -149,6 +154,27 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_btnOpen.setArrowType(QtCore.Qt.NoArrow)
         self.self_btnOpen.setToolTip('Abrir imagen.')
         self.self_buttons.addWidget(self.self_btnOpen)
+        #/btnOpen
+        #btnEdit
+        self.self_btnEdit = QtWidgets.QToolButton(self.horizontalFrame)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.self_btnEdit.sizePolicy().hasHeightForWidth())
+        self.self_btnEdit.setSizePolicy(sizePolicy)
+        self.self_btnEdit.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":iconos/edit"),
+                       QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.self_btnEdit.setIcon(icon)
+        self.self_btnEdit.setIconSize(QtCore.QSize(16, 16))
+        self.self_btnEdit.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
+        self.self_btnEdit.setArrowType(QtCore.Qt.NoArrow)
+        self.self_btnEdit.setToolTip('Editar VIC Media Item.')
+        self.self_buttons.addWidget(self.self_btnEdit)
+        #/btnEdit
         self.self_btnRemove = QtWidgets.QToolButton(self.horizontalFrame)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -159,7 +185,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_btnRemove.setSizePolicy(sizePolicy)
         self.self_btnRemove.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(":iconos/cancel"),
+        icon1.addPixmap(QtGui.QPixmap(":iconos/delete"),
                         QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.self_btnRemove.setIcon(icon1)
         self.self_btnRemove.setIconSize(QtCore.QSize(16, 16))
@@ -207,6 +233,12 @@ class NsfwCard(QtWidgets.QFrame):
 
     def btnOpen_click(self):
         webbrowser.open_new_tab(self.getFilePath())
+
+    def btnEdit_click(self):
+        self.dlgEdit = DlgVicEdit(self, self.data)
+        if self.dlgEdit.exec_():
+            self.data = self.dlgEdit.media_item
+            self.update_me.emit()
 
     def btnRemove_click(self):
         self.remove_me.emit(self)

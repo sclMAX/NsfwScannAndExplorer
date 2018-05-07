@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Nsfw Report Explorer v1.0 by MAX</string>
+   <string>VIC Report Explorer v1.0 by MAX</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../resources.qrc">
@@ -40,7 +40,7 @@
        <item>
         <widget class="QToolButton" name="btnScanner">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Abrir Nsfw Scanner.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>Abrir Nsfw Scanner.</string>
          </property>
          <property name="accessibleName">
           <string>Escanear Directorio.</string>
@@ -50,7 +50,7 @@
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/iconos/scanner</normaloff>:/iconos/scanner</iconset>
+           <normaloff>:/iconos/scann</normaloff>:/iconos/scann</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -122,14 +122,14 @@
           <bool>true</bool>
          </property>
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Activar/Desactivar animaciones.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>Activar/Desactivar animaciones.</string>
          </property>
          <property name="text">
           <string/>
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/iconos/scann</normaloff>:/iconos/scann</iconset>
+           <normaloff>:/iconos/video</normaloff>:/iconos/video</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -164,14 +164,14 @@
           <bool>false</bool>
          </property>
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Borrar todas de la pagina actual.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>Borrar todas de la pagina actual.</string>
          </property>
          <property name="text">
           <string/>
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/iconos/cancel</normaloff>:/iconos/cancel</iconset>
+           <normaloff>:/iconos/delete</normaloff>:/iconos/delete</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -190,7 +190,7 @@
           <bool>false</bool>
          </property>
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Deshacer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>Deshacer.</string>
          </property>
          <property name="text">
           <string/>
@@ -321,14 +321,14 @@
                <item>
                 <widget class="QToolButton" name="btnOpenImage">
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Abrir Imagen a Buscar.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  <string>Abrir Imagen a Buscar.</string>
                  </property>
                  <property name="text">
                   <string/>
                  </property>
                  <property name="icon">
                   <iconset resource="../resources.qrc">
-                   <normaloff>:/iconos/open</normaloff>:/iconos/open</iconset>
+                   <normaloff>:/iconos/open_image</normaloff>:/iconos/open_image</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -351,7 +351,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../resources.qrc">
-                   <normaloff>:/iconos/view_image</normaloff>:/iconos/view_image</iconset>
+                   <normaloff>:/iconos/scann_image</normaloff>:/iconos/scann_image</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -382,7 +382,7 @@
              <x>0</x>
              <y>0</y>
              <width>851</width>
-             <height>556</height>
+             <height>538</height>
             </rect>
            </property>
            <property name="layoutDirection">
@@ -451,19 +451,20 @@
               <bool>false</bool>
              </property>
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pagina Anterior.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>Pagina Anterior.</string>
              </property>
              <property name="text">
               <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../resources.qrc">
+               <normaloff>:/iconos/btn_up</normaloff>:/iconos/btn_up</iconset>
              </property>
              <property name="iconSize">
               <size>
                <width>48</width>
                <height>48</height>
               </size>
-             </property>
-             <property name="arrowType">
-              <enum>Qt::UpArrow</enum>
              </property>
             </widget>
            </item>
@@ -490,14 +491,14 @@
               <bool>true</bool>
              </property>
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pagina Siguiente.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>Pagina Siguiente.</string>
              </property>
              <property name="text">
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>icons/icon-th.png</normaloff>icons/icon-th.png</iconset>
+              <iconset resource="../resources.qrc">
+               <normaloff>:/iconos/btn_down</normaloff>:/iconos/btn_down</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -506,7 +507,7 @@
               </size>
              </property>
              <property name="arrowType">
-              <enum>Qt::DownArrow</enum>
+              <enum>Qt::NoArrow</enum>
              </property>
             </widget>
            </item>
@@ -523,7 +524,7 @@
               <bool>true</bool>
              </property>
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Aplicar / Quitar Filtro.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>Aplicar / Quitar Filtro.</string>
              </property>
              <property name="text">
               <string/>
@@ -575,7 +576,7 @@
               <bool>true</bool>
              </property>
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Invertir filtro.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>Invertir filtro.</string>
              </property>
              <property name="text">
               <string/>

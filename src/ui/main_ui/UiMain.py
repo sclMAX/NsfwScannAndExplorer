@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import gc
 from src.ui.main_ui.ui_main import Ui_MainWindow
 from src.ui.scann_ui.UiScann import DlgScanner, QtWidgets, QtCore, QtGui
 from src.Nsfw.vic13 import readVICFromFile, getMediaFormVIC, updateMedia
@@ -112,10 +113,17 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
     def undo(self):
         if self.undo_media:
             data = self.undo_media.pop()
-            if not data in self.media:
-                self.media.append(data)
-            if self.isFiltered and not data in self.filter_media:
-                self.filter_media.append(data)
+            if isinstance(data, list):
+                for item in data:
+                    if not item in self.media:
+                        self.media.append(item)
+                    if self.isFiltered and not item in self.filter_media:
+                        self.filter_media.append(item)
+            else:
+                if not data in self.media:
+                    self.media.append(data)
+                if self.isFiltered and not data in self.filter_media:
+                    self.filter_media.append(data)
             if not self.undo_media:
                 self.isChanged = False
                 self.btnSave.setEnabled(self.isChanged)
@@ -128,12 +136,14 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             '%d/%d' % (self.viewCards, len(self.filter_media)) + (' [F]' if self.isFiltered else ''))
 
     def btnDeleteAll_click(self):
+        deletedItems: list = []
         for card in self.cards_list:
             if card.data in self.media:
                 self.media.remove(card.data)
             if card.data in self.filter_media:
                 self.filter_media.remove(card.data)
-            self.undo_media.append(card.data)
+            deletedItems.append(card.data)
+        self.undo_media.append(deletedItems)
         self.isChanged = True
         self.btnSave.setEnabled(self.isChanged)
         self.btnUndo.setEnabled(len(self.undo_media) > 0)
@@ -153,14 +163,13 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def btnSortVIC_click(self):
         if self.image_to_find_file and self.VIC:
-            # try:
             self.isInSortProcess = True
             self.__updateView()
             self.groupBox.setEnabled(False)
             self.listView.setEnabled(False)
             self.gbBuscarImagen.setEnabled(False)
             vicFile = Path(self.vic_file)
-            features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.dat'))
+            features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.kdat'))
             base_path = str(Path(self.vic_file).parent)
             self.VICSort = VICMediaSimSort(
                 parent=self,
@@ -173,15 +182,6 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.VICSort.status.connect(self.__VICMediaSimSort_status)
             self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
             self.VICSort.start()
-            '''   except IOError:
-                self.__VICMediaSimSort_status('Formato de Archivo no soportado!')
-                self.btnSortVIC.setEnabled(False)
-                self.lblImageToFind.setPixmap(QtGui.QPixmap(None))
-                self.groupBox.setEnabled(True)
-                self.listView.setEnabled(True)
-                self.gbBuscarImagen.setEnabled(True)
-                self.isInSortProcess = False
-                self.__updateView() '''
         else:
             self.btnSortVIC.setEnabled(False)
 
@@ -204,9 +204,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.listView.setEnabled(True)
         self.gbBuscarImagen.setEnabled(True)
         self.isInSortProcess = False
-        vicFile = Path(self.vic_file)
-        features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.dat'))
-        self.VICSort.saveFeaturesToFile(features_file)
+        del self.VICSort
         if sorted_media:
             self.btnSortVIC.setEnabled(False)
             self.media = sorted_media
@@ -215,6 +213,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.__updateView()
             self.isChanged = True
             self.btnSave.setEnabled(self.isChanged)
+        gc.collect()
 
     def btnListUp_click(self):
         if self.setCurrentPage(self.current_page - 1):
@@ -236,6 +235,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.__loadReportFile()
 
     def btnSave_click(self):
+        if not self.VIC:
+            return
         self.save_file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, caption='Gardar Reporte...', filter='*.json')
         self.saveReport()
@@ -304,6 +305,10 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnUndo.setEnabled(len(self.undo_media) > 0)
         self.__updateView()
 
+    def card_update_me(self):
+        self.isChanged = True
+        self.btnSave.setEnabled(True)
+
     def getPageMedia(self, cards_for_page: int):
         page_media: list = []
         start: int = (self.current_page - 1) * cards_for_page
@@ -362,6 +367,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 item = NsfwCard(self.listView, item, cardW,
                                 cardH, base_path, self.isAnimated)
                 item.remove_me.connect(self.card_remove_me)
+                item.update_me.connect(self.card_update_me)
                 self.cards_list.append(item)
                 if col >= colums:
                     col = 0
@@ -384,7 +390,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.lblStatus.setText(self.vic_file)
             self.VIC = readVICFromFile(self.vic_file)
             self.media = getMediaFormVIC(self.VIC)
-            self.current_page = 0
+            self.current_page = 1
             self.__updateView()
 
     def saveReport(self):

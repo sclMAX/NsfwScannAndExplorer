@@ -1,8 +1,16 @@
 <RCC>
   <qresource prefix="iconos">
+    <file alias="edit">icons/icons8-edit-property-50.png</file>
+    <file alias="noimage">icons/noimage.gif</file>
+    <file alias="btn_down">icons/icons8-caret-arrowhead-facing-down.png</file>
+    <file alias="delete">icons/icons8-delete.png</file>
+    <file alias="video">icons/icons8-video.png</file>
+    <file alias="scann_image">icons/icons8-facial-recognition.png</file>
     <file alias="view_image">icons/icon-search.png</file>
+    <file alias="btn_up">icons/icons8-slide-up.png</file>
     <file alias="cancel">icons/icon-circledelete.png</file>
     <file alias="ok">icons/icon-circleselect.png</file>
+    <file alias="open_image">icons/icons8-image.png</file>
     <file alias="pause">icons/icon-handdrag.png</file>
     <file alias="scann">icons/icon-acsource.png</file>
     <file alias="open">icons/icon-folder-open.png</file>

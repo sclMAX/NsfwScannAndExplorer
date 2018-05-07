@@ -69,6 +69,8 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
 
     def chkScannNsfw_stateChanged(self):
         self.isScannNsfw = self.chkScannNsfw.isChecked() > 0
+        self.chkGif_as_frame.setEnabled(self.isScannNsfw)
+        self.chkShowImage.setEnabled(self.isScannNsfw)
 
     def showImage(self):
         if not self.chkShowImage.isChecked() > 0:
@@ -227,6 +229,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
                                                                       caption='Directorio a Escanear?')
         if self.scannFolder:
             self.vicFile = ''
+            self.chkScannNsfw.setEnabled(True)
             self.lblScannFolder.setText(str(self.scannFolder))
             self.btnSave.setEnabled(True)
         else:
@@ -237,6 +240,10 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.vicFile, _ = QtWidgets.QFileDialog.getOpenFileName(self,
                                                                 caption='Reporte VIC a Escanear?', filter='*.json')
         if self.vicFile:
+            self.chkScannNsfw.setEnabled(False)
+            self.chkScannNsfw.setChecked(True)
+            self.chkShowImage.setEnabled(True)
+            self.chkGif_as_frame.setEnabled(True)
             self.isScannFinish = False
             self.scannFolder = ''
             self.lblScannFolder.setText(str(self.vicFile))

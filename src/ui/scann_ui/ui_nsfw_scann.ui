@@ -30,7 +30,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../resources.qrc">
-    <normaloff>:/iconos/scanner</normaloff>:/iconos/scanner</iconset>
+    <normaloff>:/iconos/scann</normaloff>:/iconos/scann</iconset>
   </property>
   <property name="toolTip">
    <string/>
@@ -133,7 +133,7 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Escanear desde Reporte VIC 1.3.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Escanear desde Reporte VIC 1.3.</string>
             </property>
             <property name="text">
              <string>VIC</string>
@@ -262,6 +262,9 @@
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
            <widget class="QCheckBox" name="chkScannNsfw">
+            <property name="toolTip">
+             <string>Si esta activado realiza en escaneo de las imagenes con Nsfw</string>
+            </property>
             <property name="text">
              <string>Realizar Escaneo Nsfw</string>
             </property>
@@ -273,7 +276,7 @@
           <item alignment="Qt::AlignTop">
            <widget class="QCheckBox" name="chkShowImage">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Muestra una vista previa de las imagenes que esten por sobre la Probabilidad espesificada.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Muestra una vista previa de las imagenes que esten por sobre la Probabilidad espesificada.</string>
             </property>
             <property name="text">
              <string>Mostrar Nsfw Imagenes</string>
@@ -286,7 +289,7 @@
           <item alignment="Qt::AlignTop">
            <widget class="QCheckBox" name="chkGif_as_frame">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Si esta activado escanea los GIF por frames como a los videos, de lo contrario los escanea como imagenes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Si esta activado escanea los GIF por frames como a los videos, de lo contrario los escanea como imagenes.</string>
             </property>
             <property name="text">
              <string>Escanear GIF por frames</string>
@@ -988,8 +991,11 @@
             <height>50</height>
            </size>
           </property>
-          <property name="statusTip">
+          <property name="toolTip">
            <string>Iniciar Escaneo.</string>
+          </property>
+          <property name="statusTip">
+           <string/>
           </property>
           <property name="text">
            <string/>
@@ -1012,7 +1018,7 @@
            <bool>false</bool>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pausar Proceso.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>Pausar Proceso.</string>
           </property>
           <property name="text">
            <string/>
@@ -1043,6 +1049,9 @@
             <height>50</height>
            </size>
           </property>
+          <property name="toolTip">
+           <string>Cerrar y cargar reporte creado.</string>
+          </property>
           <property name="statusTip">
            <string>Cerrar.</string>
           </property>
@@ -1068,6 +1077,9 @@
             <width>50</width>
             <height>50</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>Cancelar</string>
           </property>
           <property name="statusTip">
            <string>Cerrar.</string>
