@@ -95,6 +95,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.progress.emit(count, total)
         tInicioProceso = time()
         img_idx: int = 0
+        dump_count: int = 200
         for item in self.VICMedia:
             try:
                 count += 1
@@ -109,10 +110,13 @@ class VICMediaSimSort(QtCore.QThread):
                 img.idx = img_idx
                 img_idx += 1
                 self.img_list[str(img.idx)] = img
-                self.img_list.dump(str(img.idx))
+                if img_idx >= dump_count:
+                    self.img_list.dump()
+                    dump_count += 200
             except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
                 print('ERROR:', img.getFilePath())
                 continue
+        self.img_list.dump()
 
     def __prepareKNN(self, n_neighbors: int, totalItems: int):
         self.__knn = kNN()
