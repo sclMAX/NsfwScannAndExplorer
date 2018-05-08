@@ -99,13 +99,26 @@ class VICMediaSimSort(QtCore.QThread):
         gc.collect()
 
     def __loadAllImages(self):
-        gc.collect()
         count: int = 0
         total: int = len(self.VICMedia)
         self.progress.emit(count, total)
         tInicioProceso = time()
         img_idx: int = 0
         dump_idxs: list = []
+        import sys
+        from psutil import virtual_memory
+        mem = virtual_memory()
+        tam_item: int = sys.getsizeof(self.query_img.mediaItem) 
+        tam_item += sys.getsizeof(self.query_img.base_path)
+        tam_item += sys.getsizeof(self.query_img.idx)
+        tam_item += sys.getsizeof(self.query_img.features) 
+        tam_item += tam_item
+        dump_limit: int = mem.available // tam_item
+        tdump: int = 0
+        cdump: int = 0
+        print('Mem.available', mem.available)
+        print('Tam Image:', tam_item)
+        print('Dump_limit:', dump_limit)
         for item in self.VICMedia:
             try:
                 count += 1
@@ -121,9 +134,9 @@ class VICMediaSimSort(QtCore.QThread):
                 img_idx += 1
                 dump_idxs.append(str(img.idx))
                 self.img_list[str(img.idx)] = img
-                tdump: int = len(dump_idxs)
-                cdump: int = 0
-                if len(dump_idxs) > 100:
+                tdump = len(dump_idxs)
+                cdump = 0
+                if tdump >= dump_limit:
                     self.status.emit('Volcando cache de memoria al disco...')
                     for dId in dump_idxs:
                         self.progress.emit(cdump, tdump)
@@ -135,34 +148,34 @@ class VICMediaSimSort(QtCore.QThread):
                 print('ERROR:', img.getFilePath())
                 continue
         for dId in dump_idxs:
+            self.progress.emit(cdump, tdump)
             self.img_list.dump(dId)
             self.img_list.pop(dId)
+            cdump += 1
+        del count, total, tInicioProceso, img_idx, dump_idxs
+        del et, fs, eta, tdump, cdump
+        gc.collect()
 
     def __prepareKNN(self, n_neighbors: int, totalItems: int):
-        gc.collect()
         self.__knn = kNN()
         self.__knn.compile(n_neighbors=n_neighbors,
-                           algorithm="brute", metric="cosine")
+                           algorithm="auto", metric="cosine")
         x_file = tempfile.TemporaryFile()
         X = np.memmap(x_file, mode='w+', shape=(totalItems,
                                                 self.query_img.features.shape[0]))
-        Xidx: int = 0
-        total: int = len(self.img_list.keys())
+        total: int = totalItems
         count: int = 0
         self.status.emit('Cargando caracteristicas...')
-        for item in self.img_list.keys():
-            X[Xidx] = self.img_list.get(item).features
-            self.img_list.pop(item)
-            Xidx += 1
+        for k, item in self.img_list.archive.items():
+            X[int(k)] = item.features
             count += 1
+            self.status.emit('Cargando key %s' % k)
             self.progress.emit(count, total)
         self.__knn.fit(X)
+        with open(self.features_file + '.knn', 'w+b') as f_knn:
+            pickle.dump(self.__knn, f_knn)
         x_file.close()
-        del Xidx
-        del count
-        del total
-        del X
-        del x_file
+        del count, total, X, x_file
         gc.collect()
 
     def __orderIndices(self, n_neighbors: int):
@@ -183,23 +196,32 @@ class VICMediaSimSort(QtCore.QThread):
 
     def run(self):
         self.tInicio = time()
-        self.status.emit('Cargando datos de escaneo previo...')
-        self.img_list = klepto.archives.dir_archive(
+        if Path(self.features_file + '.knn').exists():
+            with open(self.features_file + '.knn', 'r+b') as f_knn:
+                try:
+                    self.__knn = pickle.load(f_knn)
+                except EOFError:
+                    pass
+        self.img_list = klepto.archives.file_archive(
             self.features_file,
             serialized=True,
             cached=True,
             protocol=pickle.HIGHEST_PROTOCOL
         )
         self.__setFeatures(self.query_img)
-        data = self.img_list.get('0')
-        if data:
-            self.isFeaturesLoad = True
+        self.status.emit('Cargando datos de escaneo previo...')
+        self.img_list.archived(True)
+        data = self.img_list.archive.get('0')
+        self.isFeaturesLoad = isinstance(data, ImageCNN)
         if not self.isFeaturesLoad:
             self.__loadAllImages()
-        totalItems = len(self.img_list.keys())
+        self.status.emit('Cargando Keys...')
+        self.img_list.archived(True)
+        totalItems = len(self.img_list.archive.keys())
         n_neighbors = totalItems if totalItems < 50 else 50
         self.status.emit('Procesando Imagenes...')
-        self.__prepareKNN(n_neighbors, totalItems)
+        if not self.__knn:
+            self.__prepareKNN(n_neighbors, totalItems)
         indices = self.__orderIndices(n_neighbors)
         self.freeMem()
         resultMedia: list = []
@@ -208,8 +230,7 @@ class VICMediaSimSort(QtCore.QThread):
         total: int = len(imgs)
         self.progress.emit(count, total)
         for idx in imgs:
-            img = self.img_list.get(str(idx))
-            self.img_list.pop(str(idx))
+            img = self.img_list.archive.get(str(idx))
             count += 1
             self.status.emit('Reordenando Imagen %d de %d...' % (count, total))
             self.progress.emit(count, total)
@@ -221,8 +242,5 @@ class VICMediaSimSort(QtCore.QThread):
                          secondsToHMS(time() - self.tInicio))
         self.progress.emit(0, -1)
         self.finish.emit(resultMedia)
-        del indices
-        del resultMedia
-        del self.img_list
-        del self.VICMedia
+        del indices, resultMedia, self.img_list, self.VICMedia
         gc.collect()
