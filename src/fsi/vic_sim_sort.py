@@ -99,12 +99,13 @@ class VICMediaSimSort(QtCore.QThread):
         gc.collect()
 
     def __loadAllImages(self):
+        gc.collect()
         count: int = 0
         total: int = len(self.VICMedia)
         self.progress.emit(count, total)
         tInicioProceso = time()
         img_idx: int = 0
-        dump_count: int = 0
+        dump_idxs: list = []
         for item in self.VICMedia:
             try:
                 count += 1
@@ -118,18 +119,27 @@ class VICMediaSimSort(QtCore.QThread):
                 self.__setFeatures(img)
                 img.idx = img_idx
                 img_idx += 1
+                dump_idxs.append(str(img.idx))
                 self.img_list[str(img.idx)] = img
-                dump_count += 1
-                if dump_count > 100:
+                tdump: int = len(dump_idxs)
+                cdump: int = 0
+                if len(dump_idxs) > 100:
                     self.status.emit('Volcando cache de memoria al disco...')
-                    self.img_list.dump()
-                    dump_count = 0
+                    for dId in dump_idxs:
+                        self.progress.emit(cdump, tdump)
+                        self.img_list.dump(dId)
+                        self.img_list.pop(dId)
+                        cdump += 1
+                    dump_idxs.clear()
             except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
                 print('ERROR:', img.getFilePath())
                 continue
-        self.img_list.dump()
+        for dId in dump_idxs:
+            self.img_list.dump(dId)
+            self.img_list.pop(dId)
 
     def __prepareKNN(self, n_neighbors: int, totalItems: int):
+        gc.collect()
         self.__knn = kNN()
         self.__knn.compile(n_neighbors=n_neighbors,
                            algorithm="brute", metric="cosine")
@@ -142,6 +152,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.status.emit('Cargando caracteristicas...')
         for item in self.img_list.keys():
             X[Xidx] = self.img_list.get(item).features
+            self.img_list.pop(item)
             Xidx += 1
             count += 1
             self.progress.emit(count, total)
@@ -173,10 +184,10 @@ class VICMediaSimSort(QtCore.QThread):
     def run(self):
         self.tInicio = time()
         self.status.emit('Cargando datos de escaneo previo...')
-        self.img_list = klepto.archives.file_archive(
+        self.img_list = klepto.archives.dir_archive(
             self.features_file,
             serialized=True,
-            cached=False,
+            cached=True,
             protocol=pickle.HIGHEST_PROTOCOL
         )
         self.__setFeatures(self.query_img)
@@ -198,6 +209,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.progress.emit(count, total)
         for idx in imgs:
             img = self.img_list.get(str(idx))
+            self.img_list.pop(str(idx))
             count += 1
             self.status.emit('Reordenando Imagen %d de %d...' % (count, total))
             self.progress.emit(count, total)
