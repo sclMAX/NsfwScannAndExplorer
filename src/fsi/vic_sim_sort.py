@@ -128,7 +128,7 @@ class VICMediaSimSort(QtCore.QThread):
                 fs = count / et if et > 0 else 1
                 eta: str = secondsToHMS((total - count) * (et / count))
                 self.status.emit(
-                    'Procesando Archivo %d de %d (ETA: %s @%.2f a/s | %s) => %s' % (count, total, eta, fs, img.getFilePath(), tt))
+                    'Procesando Archivo %d de %d (ETA: %s @%.2f a/s | %s) => %s' % (count, total, eta, fs, tt, img.getFilePath()))
                 feature = self.__getFeatures(img)
                 img.idx = img_idx
                 img_idx += 1
