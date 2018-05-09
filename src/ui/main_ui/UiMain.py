@@ -168,18 +168,15 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.groupBox.setEnabled(False)
             self.listView.setEnabled(False)
             self.gbBuscarImagen.setEnabled(False)
-            vicFile = Path(self.vic_file)
-            features_file: str = str(Path(vicFile.parent).joinpath(vicFile.name + '.kdat'))
-            base_path = str(Path(self.vic_file).parent)
             self.VICSort = VICMediaSimSort(
                 parent=self,
                 query_img_file=self.image_to_find_file,
                 media=self.media,
-                features_file=features_file,
-                base_path=base_path
+                vic_file=self.vic_file
             )
             self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
             self.VICSort.status.connect(self.__VICMediaSimSort_status)
+            self.VICSort.saveMedia.connect(self.__VICMediaSimSort_saveMedia)
             self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
             self.VICSort.start()
         else:
@@ -198,6 +195,13 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.lblProgress.setVisible(True)
         self.lblProgress.setText(msg)
         self.lblProgress.repaint()
+
+    def __VICMediaSimSort_saveMedia(self, newMedia: list):
+        if newMedia:
+            self.media = newMedia
+            updateMedia(self.VIC, self.media)
+            self.save_file = self.vic_file
+            self.saveReport()
 
     def __VICMediaSimSort_finish(self, sorted_media: list):
         self.groupBox.setEnabled(True)

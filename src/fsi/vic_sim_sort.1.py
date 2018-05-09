@@ -74,7 +74,6 @@ class VICMediaSimSort(QtCore.QThread):
         self.base_path: str = str(Path(vic_file).parent)
         self.file_csv: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.csv'))
         self.file_knn: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.knn'))
-        self.file_npy: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
         self.query_img: ImageCNN = ImageCNN({'RelativeFilePath': query_img_file}, '')
         self.VICMedia: list = media
         self.__model: object = None
@@ -129,8 +128,8 @@ class VICMediaSimSort(QtCore.QThread):
 
     def __loadAllImages(self):
         count, total, tInicioProceso = 0, len(self.VICMedia), time()
-        np.save(self.file_npy,np.array([], dtype='float16'))
-        X = np.load(self.file_npy, mmap_mode='w+')
+        x_file = tempfile.TemporaryFile()
+        X = np.memmap(x_file, mode='w+', dtype='float16', shape=(1, 1))
         shape_x, shape_y = 0, self.query_img.features.shape[0]
         for item in self.VICMedia:
             try:
@@ -160,39 +159,34 @@ class VICMediaSimSort(QtCore.QThread):
                 print('IMAGEN ERROR:', file_path)
                 continue
         self.status.emit('Guardando train file...')
-        #df = pandas.DataFrame(X)
-        #df.to_csv(self.file_csv)
+        df = pandas.DataFrame(X)
+        df.to_csv(self.file_csv)
         self.__prepareKNN(X)
-        np.save(self.file_npy, X)
-        #x_file.close()
+        x_file.close()
         print('TIEMPO ESCANEO DE IMAGENES:', secondsToHMS(time() - self.tInicio))
         del count, total, tInicioProceso
         del et, fs, eta
-        del X
-        gc.collect()
+        del x_file, X, df
+        gc.collect() 
 
     def __prepareKNN(self, X):
         self.__knn = kNN()
         self.__knn.compile(n_neighbors=self.n_neighbors, algorithm="auto", metric="cosine")
         self.status.emit('Preparando KNN net...')
         self.__knn.fit(X)
-
-    def preapreCvKNN(self):
-        cvKNN = cv.ml.KNearest_create()
-        cvKNN.setAlgorithmType(cv.ml.KDTREE)
-        tData = cv.ml.TrainData.loadFromCSV(self.file_csv)
-        cvKNN.train(tData)
+        self.status.emit('Guardando net KNN...')
+        with open(self.file_knn, 'w+b') as f_knn:
+            pickle.dump(self.__knn, f_knn, protocol=pickle.HIGHEST_PROTOCOL)
 
     def __loadKNN(self):
-        if Path(self.file_npy).exists():
-            self.status.emit('Cargando archivo de caracteristicas...')
-            X = np.load(self.file_npy, mmap_mode='r+')
-            #print(X[0])
-            self.n_neighbors = 50
-            self.__prepareKNN(X)
-            del X
-            gc.collect()
-            return True
+        if Path(self.file_knn).exists():
+            with open(self.file_knn, 'r+b') as f_knn:
+                try:
+                    self.status.emit('Cargando net KNN...')
+                    self.__knn = pickle.load(f_knn)
+                    return True
+                except EOFError:
+                    return False
         return False
 
     def __orderIndices(self):
@@ -229,7 +223,6 @@ class VICMediaSimSort(QtCore.QThread):
                 if idKNN and idKNN >= 0:
                     self.n_neighbors += 1
                     if self.n_neighbors >= 50:
-                        self.n_neighbors = 50
                         break
         self.status.emit('Procesando Imagenes...')
         indices = self.__orderIndices()
