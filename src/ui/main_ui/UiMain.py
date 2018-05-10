@@ -151,7 +151,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def btnOpenImage_click(self):
         self.image_to_find_file, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, caption='Abrir Imagen a Buscar...', filter='*.jpg *.jpeg *.png')
+            self, caption='Abrir Imagen a Buscar...', filter='*.jpg *.jpeg *.png *.tif *.gif *.bmp')
         if self.image_to_find_file:
             self.lblImageToFind.setPixmap(
                 QtGui.QPixmap(self.image_to_find_file))
@@ -168,16 +168,19 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.groupBox.setEnabled(False)
             self.listView.setEnabled(False)
             self.gbBuscarImagen.setEnabled(False)
-            self.VICSort = VICMediaSimSort(
-                parent=self,
-                query_img_file=self.image_to_find_file,
-                media=self.media,
-                vic_file=self.vic_file
-            )
-            self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
-            self.VICSort.status.connect(self.__VICMediaSimSort_status)
-            self.VICSort.saveMedia.connect(self.__VICMediaSimSort_saveMedia)
-            self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
+            if not self.VICSort:
+                self.VICSort = VICMediaSimSort(
+                    parent=self,
+                    query_img_file=self.image_to_find_file,
+                    media=self.media,
+                    vic_file=self.vic_file
+                )
+                self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
+                self.VICSort.status.connect(self.__VICMediaSimSort_status)
+                self.VICSort.saveMedia.connect(self.__VICMediaSimSort_saveMedia)
+                self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
+            else:
+                self.VICSort.setQuery_img(self.image_to_find_file)
             self.VICSort.start()
         else:
             self.btnSortVIC.setEnabled(False)
@@ -208,7 +211,6 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.listView.setEnabled(True)
         self.gbBuscarImagen.setEnabled(True)
         self.isInSortProcess = False
-        del self.VICSort
         if sorted_media:
             self.btnSortVIC.setEnabled(False)
             self.media = sorted_media
@@ -217,7 +219,6 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.__updateView()
             self.isChanged = True
             self.btnSave.setEnabled(self.isChanged)
-        gc.collect()
 
     def btnListUp_click(self):
         if self.setCurrentPage(self.current_page - 1):

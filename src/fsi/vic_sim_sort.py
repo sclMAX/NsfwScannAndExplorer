@@ -1,13 +1,9 @@
 
 from time import time
 import gc
-import tempfile
 from pathlib import Path
-import pickle
 import numpy as np
-import klepto
 import wget
-import pandas
 from PyQt5 import QtCore
 import cv2 as cv
 from src.fsi.kNN import kNN
@@ -56,7 +52,6 @@ def imageToBlob(file_path: str):
         inputblob = cv.dnn.blobFromImage(
             img_array, 1., (224, 224), (104, 117, 123))
         del img, img_array
-        gc.collect()
         return inputblob
     except:
         raise
@@ -75,12 +70,17 @@ class VICMediaSimSort(QtCore.QThread):
         self.file_csv: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.csv'))
         self.file_knn: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.knn'))
         self.file_npy: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
-        self.query_img: ImageCNN = ImageCNN({'RelativeFilePath': query_img_file}, '')
+        self.query_img: ImageCNN = None
         self.VICMedia: list = media
         self.__model: object = None
         self.__knn: kNN = None
-        self.tInicio = 0
+        self.tInicio:int = None
+        self.tInicioProceso: int = None
         self.n_neighbors: int = 0
+        self.setQuery_img(query_img_file)
+
+    def setQuery_img(self, query_img_file: str):
+        self.query_img = ImageCNN({'RelativeFilePath': query_img_file}, '')
 
     def __loadModel(self):
         try:
@@ -89,6 +89,7 @@ class VICMediaSimSort(QtCore.QThread):
             caffeModel = 'model/VGG_ILSVRC_19_layers.caffemodel'
             self.__model = cv.dnn.readNetFromCaffe(prototxt=prototxt, caffeModel=caffeModel)
             self.status.emit('Modelo Cargado!')
+            del prototxt, caffeModel
         except cv.error:
             self.status.emit(
                 'Faltan archivos para configurar el modelo VGG19!')
@@ -107,16 +108,6 @@ class VICMediaSimSort(QtCore.QThread):
         self.__model.setInput(img_blob)
         return np.array(self.__model.forward('pool4').flatten())
 
-    def __calcMemCache(self):
-        from psutil import virtual_memory
-        mem = virtual_memory()
-        tam_item: int = self.query_img.getSize()
-        dump_limit: int = (mem.available // 1.2) // tam_item
-        print('Mem.available', mem.available)
-        print('Tam Image:', tam_item)
-        print('Dump_limit:', dump_limit)
-        return dump_limit
-
     def getFilePath(self, mediaItem: dict):
         file_path: str = mediaItem.get('RelativeFilePath')
         if file_path:
@@ -127,68 +118,76 @@ class VICMediaSimSort(QtCore.QThread):
             return file_path
         return ''
 
+    def __emitLoadStatus(self, count: int, file: str):
+        total, t = len(self.VICMedia), time()
+        et = t - self.tInicioProceso
+        fs = count / et if et > 0 else 1
+        eta: str = secondsToHMS((total - count) * (et / count))
+        self.progress.emit(count, total)
+        self.status.emit('Procesando Archivo %d de %d (%s | ETA: %s @%.2f a/s) => %s' % (count, total, secondsToHMS(t - self.tInicio), eta, fs, file))
+        del total, t, et, fs, eta
+
     def __loadAllImages(self):
-        count, total, tInicioProceso = 0, len(self.VICMedia), time()
-        np.save(self.file_npy,np.array([], dtype='float16'))
+        count, self.tInicioProceso = 0, time()
+        np.save(self.file_npy, np.array([], dtype='float'))
         X = np.load(self.file_npy, mmap_mode='w+')
-        shape_x, shape_y = 0, self.query_img.features.shape[0]
+        shape_x = 0
         for item in self.VICMedia:
             try:
                 count += 1
-                self.progress.emit(count, total)
-                t = time()
-                et = t - tInicioProceso
-                tt = secondsToHMS(t - self.tInicio)
-                fs = count / et if et > 0 else 1
-                eta: str = secondsToHMS((total - count) * (et / count))
                 file_path = self.getFilePath(item)
-                self.status.emit(
-                    'Procesando Archivo %d de %d (%s |ETA: %s @%.2f a/s) => %s' % (count, total, tt, eta, fs,file_path))
                 if not file_path:
                     continue
+                self.__emitLoadStatus(count, file_path)
                 img_blob = imageToBlob(file_path)
-                feature = self.__getFeatures(img_blob)
-                idxStr: str = str(shape_x)
+                idxStr = str(shape_x)
                 item['IdKNN'] = shape_x
-                shape_x += 1                
-                X = np.resize(X, (shape_x, shape_y))
-                X[int(idxStr)] = feature
+                shape_x += 1
+                X = np.resize(X, (shape_x, self.query_img.features.shape[0]))
+                X[int(idxStr)] = self.__getFeatures(img_blob)
                 if self.n_neighbors < 50:
                     self.n_neighbors += 1
+                else:
+                    self.n_neighbors = 50
+                gc.collect()
             except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
                 item['IdKNN'] = -1
                 print('IMAGEN ERROR:', file_path)
                 continue
-        self.status.emit('Guardando train file...')
-        #df = pandas.DataFrame(X)
-        #df.to_csv(self.file_csv)
         self.__prepareKNN(X)
+        self.status.emit('Guardando datos KNN Net...')
+        self.progress.emit(0, 0)
         np.save(self.file_npy, X)
-        #x_file.close()
         print('TIEMPO ESCANEO DE IMAGENES:', secondsToHMS(time() - self.tInicio))
-        del count, total, tInicioProceso
-        del et, fs, eta
-        del X
+        del count, X, shape_x, file_path
         gc.collect()
 
     def __prepareKNN(self, X):
         self.__knn = kNN()
         self.__knn.compile(n_neighbors=self.n_neighbors, algorithm="auto", metric="cosine")
-        self.status.emit('Preparando KNN net...')
+        self.status.emit('Entrenando KNN Net...')
+        self.progress.emit(0, 0)
         self.__knn.fit(X)
 
-    def preapreCvKNN(self):
-        cvKNN = cv.ml.KNearest_create()
-        cvKNN.setAlgorithmType(cv.ml.KDTREE)
-        tData = cv.ml.TrainData.loadFromCSV(self.file_csv)
-        cvKNN.train(tData)
+    def setN_neighbors(self):
+        count: int = 0
+        total: int = len(self.VICMedia)
+        for item in self.VICMedia:
+            count += 1
+            self.progress.emit(count, total)
+            idKNN = item.get('IdKNN')
+            if idKNN and idKNN >= 0:
+                if self.n_neighbors < 50:
+                    self.n_neighbors += 1
+                else:
+                    break
 
     def __loadKNN(self):
         if Path(self.file_npy).exists():
             self.status.emit('Cargando archivo de caracteristicas...')
+            self.progress.emit(0, 0)
             X = np.load(self.file_npy, mmap_mode='r+')
-            #print(X[0])
-            self.n_neighbors = 50
+            self.setN_neighbors()
             self.__prepareKNN(X)
             del X
             gc.collect()
@@ -196,6 +195,8 @@ class VICMediaSimSort(QtCore.QThread):
         return False
 
     def __orderIndices(self):
+        self.status.emit('Analizando Media Items...')
+        self.progress.emit(0, 0)
         distances, indices = self.__knn.predict(np.array([self.query_img.features]))
         distances = distances.flatten()
         indices = indices.flatten()
@@ -204,36 +205,20 @@ class VICMediaSimSort(QtCore.QThread):
         gc.collect()
         return indices
 
-    def freeMem(self):
-        del self.__knn
-        del self.__model
-        del self.query_img
-        gc.collect()
-
     def run(self):
         self.tInicio = time()
         self.status.emit('Escaneando Imagen de muestra...')
+        self.progress.emit(0, 0)
         self.query_img.features = self.__getFeatures(self.query_img.getData())
-        idKNN = self.VICMedia[0].get('IdKNN')
-        if not self.__loadKNN() or not isinstance(idKNN, int):
-            self.__loadAllImages()
-            self.saveMedia.emit(self.VICMedia)
-        else:
-            self.status.emit('Calculando Media Items...')
-            count: int = 0
-            total: int = len(self.VICMedia)
-            for item in self.VICMedia:
-                count += 1
-                self.progress.emit(count, total)
-                idKNN = item.get('IdKNN')
-                if idKNN and idKNN >= 0:
-                    self.n_neighbors += 1
-                    if self.n_neighbors >= 50:
-                        self.n_neighbors = 50
-                        break
-        self.status.emit('Procesando Imagenes...')
+        if not self.__knn:
+            idKNN = self.VICMedia[0].get('IdKNN')
+            if not self.__loadKNN() or not isinstance(idKNN, int):
+                self.__loadAllImages()
+                self.saveMedia.emit(self.VICMedia)
+            else:
+                self.status.emit('Calculando Media Items...')
+                self.setN_neighbors()
         indices = self.__orderIndices()
-        self.freeMem()
         resultMedia: list = []
         imgs = indices[0]
         count: int = 0
@@ -248,9 +233,10 @@ class VICMediaSimSort(QtCore.QThread):
                     resultMedia.append(media)
                     break
         resultMedia.extend(self.VICMedia)
+        self.VICMedia = resultMedia
         self.status.emit('Proceso terminado en %s!' %
                          secondsToHMS(time() - self.tInicio))
         self.progress.emit(0, -1)
         self.finish.emit(resultMedia)
-        del indices, resultMedia, self.VICMedia
+        del indices, resultMedia
         gc.collect()
