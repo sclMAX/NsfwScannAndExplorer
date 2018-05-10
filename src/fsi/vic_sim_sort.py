@@ -11,6 +11,7 @@ from src.utils.sort_utils import find_topk_unique
 from src.utils.formats import secondsToHMS
 from src.utils import Image as ImgTools
 
+isCaffe: bool = True
 
 class ImageCNN(object):
     def __init__(self, mediaItem: dict, base_path: str):
@@ -21,7 +22,7 @@ class ImageCNN(object):
 
     def __processImg(self):
         file_path: str = self.getFilePath()
-        return imageToBlob(file_path)
+        return imageToCNN(file_path)
 
     def getFilePath(self):
         file_path: str = self.mediaItem.get('RelativeFilePath')
@@ -36,23 +37,23 @@ class ImageCNN(object):
     def getData(self):
         return self.__processImg()
 
-    def getSize(self):
-        import sys
-        tam_item: int = sys.getsizeof(self.mediaItem)
-        tam_item += sys.getsizeof(self.base_path)
-        tam_item += sys.getsizeof(self.idx)
-        tam_item += sys.getsizeof(self.features)
-        tam_item += sys.getsizeof(self)
-        return tam_item
-
-def imageToBlob(file_path: str):
+def imageToCNN(file_path: str):
     try:
-        img = ImgTools.load_img(file_path, target_size=(224, 224))
-        img_array = ImgTools.img_to_array(img)
-        inputblob = cv.dnn.blobFromImage(
-            img_array, 1., (224, 224), (104, 117, 123))
-        del img, img_array
-        return inputblob
+        if isCaffe:
+            img = ImgTools.load_img(file_path, target_size=(224, 224))
+            img_array = ImgTools.img_to_array(img)
+            inputblob = cv.dnn.blobFromImage(
+                img_array, 1., (224, 224), (104, 117, 123))
+            del img, img_array
+            return inputblob
+        else:
+            from keras.preprocessing import image
+            from src.utils.imagenet_utils import preprocess_input
+            img = image.load_img(file_path, target_size=(224, 224))
+            img = image.img_to_array(img)
+            img = np.expand_dims(img, axis=0)
+            img = preprocess_input(img)
+            return img
     except:
         raise
 
@@ -83,19 +84,32 @@ class VICMediaSimSort(QtCore.QThread):
         self.query_img = ImageCNN({'RelativeFilePath': query_img_file}, '')
 
     def __loadModel(self):
-        try:
-            self.status.emit('Cargando Modelo...')
-            prototxt = 'model/VGG_ILSVRC_19_layers_deploy.prototxt'
-            caffeModel = 'model/VGG_ILSVRC_19_layers.caffemodel'
-            self.__model = cv.dnn.readNetFromCaffe(prototxt=prototxt, caffeModel=caffeModel)
-            self.status.emit('Modelo Cargado!')
-            del prototxt, caffeModel
-        except cv.error:
-            self.status.emit(
-                'Faltan archivos para configurar el modelo VGG19!')
-            url = 'http://www.robots.ox.ac.uk/~vgg/software/very_deep/caffe/VGG_ILSVRC_19_layers.caffemodel'
-            wget.download(url, caffeModel, self.__dowloadProgress)
-            self.__loadModel()
+        self.progress.emit(0, 0)
+        if isCaffe:
+            try:
+                self.status.emit('Cargando Modelo...')
+                prototxt = 'model/VGG_ILSVRC_19_layers_deploy.prototxt'
+                caffeModel = 'model/VGG_ILSVRC_19_layers.caffemodel'
+                self.__model = cv.dnn.readNetFromCaffe(prototxt=prototxt, caffeModel=caffeModel)
+                del prototxt, caffeModel
+            except cv.error:
+                self.status.emit(
+                    'Faltan archivos para configurar el modelo VGG19!')
+                url = 'http://www.robots.ox.ac.uk/~vgg/software/very_deep/caffe/VGG_ILSVRC_19_layers.caffemodel'
+                wget.download(url, caffeModel, self.__dowloadProgress)
+                self.__loadModel()
+        else:
+            self.status.emit('Cargando Backend Tensorflow...')
+            from src.fsi.vgg19 import VGG19
+            from keras.models import Model
+            self.status.emit('Cargando VGG19 Model...')
+            base_model = VGG19(weights='imagenet')
+            self.status.emit('Configurando VGG19 Model...')
+            #self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('block3_pool').output)
+            #self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
+            #self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('block5_pool').output)
+            self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
+        self.status.emit('Modelo Cargado!')
 
     def __dowloadProgress(self, value, maximum, _):
         self.progress.emit(value, maximum)
@@ -105,8 +119,14 @@ class VICMediaSimSort(QtCore.QThread):
     def __getFeatures(self, img_blob):
         if not self.__model:
             self.__loadModel()
-        self.__model.setInput(img_blob)
-        return np.array(self.__model.forward('pool4').flatten())
+        if isCaffe:
+            self.__model.setInput(img_blob)
+            # return np.array(self.__model.forward('pool3').flatten())
+            # return np.array(self.__model.forward('pool4').flatten())
+            # return np.array(self.__model.forward('pool5').flatten())
+            return np.array(self.__model.forward('fc6').flatten())
+        else:
+            return np.array(self.__model.predict(img_blob).flatten())
 
     def getFilePath(self, mediaItem: dict):
         file_path: str = mediaItem.get('RelativeFilePath')
@@ -129,8 +149,11 @@ class VICMediaSimSort(QtCore.QThread):
 
     def __loadAllImages(self):
         count, self.tInicioProceso = 0, time()
-        np.save(self.file_npy, np.array([], dtype='float'))
-        X = np.load(self.file_npy, mmap_mode='w+')
+        # np.save(self.file_npy, np.array([], dtype='float'))
+        # X = np.load(self.file_npy, mmap_mode='w+')
+        from tempfile import TemporaryFile
+        f = TemporaryFile()
+        X = np.memmap(f, mode='w+', dtype='float', shape=(1, 1))
         shape_x = 0
         for item in self.VICMedia:
             try:
@@ -139,7 +162,7 @@ class VICMediaSimSort(QtCore.QThread):
                 if not file_path:
                     continue
                 self.__emitLoadStatus(count, file_path)
-                img_blob = imageToBlob(file_path)
+                img_blob = imageToCNN(file_path)
                 idxStr = str(shape_x)
                 item['IdKNN'] = shape_x
                 shape_x += 1
@@ -157,6 +180,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.__prepareKNN(X)
         self.status.emit('Guardando datos KNN Net...')
         self.progress.emit(0, 0)
+        f.close()
         np.save(self.file_npy, X)
         print('TIEMPO ESCANEO DE IMAGENES:', secondsToHMS(time() - self.tInicio))
         del count, X, shape_x, file_path
