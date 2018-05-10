@@ -1,0 +1,2 @@
+CAFFE:	11K	Layer fc	01:21:12	CPU
+TF:	11K	Layer fc	01:36:29	CPU

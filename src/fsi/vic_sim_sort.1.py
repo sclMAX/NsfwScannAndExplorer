@@ -4,8 +4,6 @@ import gc
 from pathlib import Path
 import numpy as np
 import wget
-from psutil import virtual_memory
-from tempfile import TemporaryFile
 from PyQt5 import QtCore
 import cv2 as cv
 from src.fsi.kNN import kNN
@@ -13,28 +11,7 @@ from src.utils.sort_utils import find_topk_unique
 from src.utils.formats import secondsToHMS
 from src.utils import Image as ImgTools
 
-isCaffe: bool = True
-
-def imageToCNN(file_path: str):
-    try:
-        if isCaffe:
-            img = ImgTools.load_img(file_path, target_size=(224, 224))
-            img_array = ImgTools.img_to_array(img)
-            inputblob = cv.dnn.blobFromImage(
-                img_array, 1., (224, 224), (104, 117, 123))
-            del img, img_array
-            return inputblob
-        else:
-            from keras.preprocessing import image
-            from src.utils.imagenet_utils import preprocess_input
-            img = image.load_img(file_path, target_size=(224, 224))
-            img = image.img_to_array(img)
-            img = np.expand_dims(img, axis=0)
-            img = preprocess_input(img)
-            return img
-    except:
-        raise
-
+isCaffe: bool = False
 
 class ImageCNN(object):
     def __init__(self, mediaItem: dict, base_path: str):
@@ -60,6 +37,25 @@ class ImageCNN(object):
     def getData(self):
         return self.__processImg()
 
+def imageToCNN(file_path: str):
+    try:
+        if isCaffe:
+            img = ImgTools.load_img(file_path, target_size=(224, 224))
+            img_array = ImgTools.img_to_array(img)
+            inputblob = cv.dnn.blobFromImage(
+                img_array, 1., (224, 224), (104, 117, 123))
+            del img, img_array
+            return inputblob
+        else:
+            from keras.preprocessing import image
+            from src.utils.imagenet_utils import preprocess_input
+            img = image.load_img(file_path, target_size=(224, 224))
+            img = image.img_to_array(img)
+            img = np.expand_dims(img, axis=0)
+            img = preprocess_input(img)
+            return img
+    except:
+        raise
 
 class VICMediaSimSort(QtCore.QThread):
     # Signals
@@ -71,7 +67,6 @@ class VICMediaSimSort(QtCore.QThread):
     def __init__(self, parent: QtCore.QObject, query_img_file: str, media: list, vic_file: str):
         super().__init__(parent)
         #Files paths
-        self.parent = parent
         self.base_path: str = str(Path(vic_file).parent)
         self.file_npy: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
         self.query_img: ImageCNN = None
@@ -141,31 +136,30 @@ class VICMediaSimSort(QtCore.QThread):
             return file_path
         return ''
 
-    def __emitLoadStatus(self, count: int, file: str, memp):
+    def __emitLoadStatus(self, count: int, file: str):
         total, t = len(self.VICMedia), time()
         et = t - self.tInicioProceso
         fs = count / et if et > 0 else 1
         eta: str = secondsToHMS((total - count) * (et / count))
         self.progress.emit(count, total)
-        self.status.emit('Procesando Archivo %d de %d (TT:%s|ETA:%s @%.2f a/s|Mu:%.1f %%) => %s' % (count, total, secondsToHMS(t - self.tInicio), eta, fs, memp, file))
+        self.status.emit('Procesando Archivo %d de %d (%s | ETA: %s @%.2f a/s) => %s' % (count, total, secondsToHMS(t - self.tInicio), eta, fs, file))
         del total, t, et, fs, eta
 
     def __loadAllImages(self):
         count, self.tInicioProceso = 0, time()
         # np.save(self.file_npy, np.array([], dtype='float'))
-        # X = np.load(self.file_npy, mmap_mode='w+')        
-        file_npy_tmp = None
-        X = np.array([], dtype='float')
+        # X = np.load(self.file_npy, mmap_mode='w+')
+        from tempfile import TemporaryFile
+        f = TemporaryFile()
+        X = np.memmap(f, mode='w+', dtype='float', shape=(1, 1))
         shape_x = 0
-        isMemmap: bool = False
         for item in self.VICMedia:
             try:
                 count += 1
-                mem = virtual_memory()
                 file_path = self.getFilePath(item)
                 if not file_path:
                     continue
-                self.__emitLoadStatus(count, file_path, mem.percent)
+                self.__emitLoadStatus(count, file_path)
                 img_blob = imageToCNN(file_path)
                 idxStr = str(shape_x)
                 item['IdKNN'] = shape_x
@@ -176,15 +170,6 @@ class VICMediaSimSort(QtCore.QThread):
                     self.n_neighbors += 1
                 else:
                     self.n_neighbors = 50
-                if mem.percent > 70 and not isMemmap:
-                    print('MEMMAP ACTIVADO!')
-                    self.status.emit('Activando Mapeo de Memoria...')
-                    self.progress.emit(0, 0)
-                    isMemmap = True
-                    file_npy_tmp = TemporaryFile()
-                    np.save(file_npy_tmp, X)
-                    file_npy_tmp.close()
-                    X = np.load(file_npy_tmp, mmap_mode='r+')
                 gc.collect()
             except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
                 item['IdKNN'] = -1
@@ -193,8 +178,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.__prepareKNN(X)
         self.status.emit('Guardando datos KNN Net...')
         self.progress.emit(0, 0)
-        if file_npy_tmp:
-            file_npy_tmp.close()
+        f.close()
         np.save(self.file_npy, X)
         print('TIEMPO ESCANEO DE IMAGENES:', secondsToHMS(time() - self.tInicio))
         del count, X, shape_x, file_path
