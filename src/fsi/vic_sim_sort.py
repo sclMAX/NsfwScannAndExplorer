@@ -74,7 +74,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.VICMedia: list = media
         self.__model: object = None
         self.__knn: kNN = None
-        self.tInicio:int = None
+        self.tInicio: int = None
         self.tInicioProceso: int = None
         self.n_neighbors: int = 0
         self.setQuery_img(query_img_file)
