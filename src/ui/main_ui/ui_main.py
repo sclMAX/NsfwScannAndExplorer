@@ -9,7 +9,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from src.ui import resources_rc
 
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -154,13 +153,28 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4.addWidget(self.btnSortVIC)
         self.verticalLayout_6.addLayout(self.horizontalLayout_4)
         self.verticalLayout_7.addLayout(self.verticalLayout_6)
+        self.gbxBackend = QtWidgets.QGroupBox(self.gbBuscarImagen)
+        self.gbxBackend.setObjectName("gbxBackend")
+        self.verticalLayout_9 = QtWidgets.QVBoxLayout(self.gbxBackend)
+        self.verticalLayout_9.setObjectName("verticalLayout_9")
+        self.verticalLayout_8 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_8.setObjectName("verticalLayout_8")
+        self.chkCaffe = QtWidgets.QRadioButton(self.gbxBackend)
+        self.chkCaffe.setChecked(True)
+        self.chkCaffe.setObjectName("chkCaffe")
+        self.verticalLayout_8.addWidget(self.chkCaffe)
+        self.chkTensorflow = QtWidgets.QRadioButton(self.gbxBackend)
+        self.chkTensorflow.setObjectName("chkTensorflow")
+        self.verticalLayout_8.addWidget(self.chkTensorflow)
+        self.verticalLayout_9.addLayout(self.verticalLayout_8)
+        self.verticalLayout_7.addWidget(self.gbxBackend)
         self.horizontalLayout_3.addWidget(self.gbBuscarImagen, 0, QtCore.Qt.AlignTop)
         self.listView = QtWidgets.QScrollArea(self.centralwidget)
         self.listView.setAutoFillBackground(True)
         self.listView.setWidgetResizable(True)
         self.listView.setObjectName("listView")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 851, 538))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 843, 538))
         self.scrollAreaWidgetContents.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
@@ -308,6 +322,10 @@ class Ui_MainWindow(object):
         self.gbBuscarImagen.setTitle(_translate("MainWindow", "Buscar Imagen "))
         self.btnOpenImage.setToolTip(_translate("MainWindow", "Abrir Imagen a Buscar."))
         self.btnSortVIC.setToolTip(_translate("MainWindow", "<html><head/><body><p>Iniciar Busqueda.</p></body></html>"))
+        self.gbxBackend.setStatusTip(_translate("MainWindow", "Motor a usar en la Red Neuronal"))
+        self.gbxBackend.setTitle(_translate("MainWindow", "Backend"))
+        self.chkCaffe.setText(_translate("MainWindow", "Caffe"))
+        self.chkTensorflow.setText(_translate("MainWindow", "TensorFlow"))
         self.btnListUp.setToolTip(_translate("MainWindow", "Pagina Anterior."))
         self.lblPages.setText(_translate("MainWindow", "1/1"))
         self.btnListDown.setToolTip(_translate("MainWindow", "Pagina Siguiente."))
@@ -315,3 +333,4 @@ class Ui_MainWindow(object):
         self.lblFiltro.setText(_translate("MainWindow", ">15%"))
         self.btnFiltro_Invertir.setToolTip(_translate("MainWindow", "Invertir filtro."))
         self.slrFiltro.setToolTip(_translate("MainWindow", "<html><head/><body><p>Especificar Filtro por Probabilidad.</p></body></html>"))
+

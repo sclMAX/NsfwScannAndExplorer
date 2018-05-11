@@ -68,12 +68,13 @@ class VICMediaSimSort(QtCore.QThread):
     progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int, int)  # value, maximum
     status: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
 
-    def __init__(self, parent: QtCore.QObject, query_img_file: str, media: list, vic_file: str):
+    def __init__(self, parent: QtCore.QObject, query_img_file: str, media: list, vic_file: str, isBackendCaffe: bool):
         super().__init__(parent)
         #Files paths
         self.parent = parent
         self.base_path: str = str(Path(vic_file).parent)
         self.file_npy: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
+        self.setBackendCaffe(isBackendCaffe)
         self.query_img: ImageCNN = None
         self.VICMedia: list = media
         self.__model: object = None
@@ -82,6 +83,11 @@ class VICMediaSimSort(QtCore.QThread):
         self.tInicioProceso: int = None
         self.n_neighbors: int = 0
         self.setQuery_img(query_img_file)
+
+    @QtCore.pyqtSlot(bool)
+    def setBackendCaffe(self, isBackendCaffe: bool):
+        global isCaffe
+        isCaffe = isBackendCaffe
 
     def setQuery_img(self, query_img_file: str):
         self.query_img = ImageCNN({'RelativeFilePath': query_img_file}, '')

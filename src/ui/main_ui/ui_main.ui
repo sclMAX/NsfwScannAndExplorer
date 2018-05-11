@@ -365,6 +365,39 @@
              </item>
             </layout>
            </item>
+           <item>
+            <widget class="QGroupBox" name="gbxBackend">
+             <property name="statusTip">
+              <string>Motor a usar en la Red Neuronal</string>
+             </property>
+             <property name="title">
+              <string>Backend</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_9">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_8">
+                <item>
+                 <widget class="QRadioButton" name="chkCaffe">
+                  <property name="text">
+                   <string>Caffe</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="chkTensorflow">
+                  <property name="text">
+                   <string>TensorFlow</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -381,7 +414,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>851</width>
+             <width>843</width>
              <height>538</height>
             </rect>
            </property>

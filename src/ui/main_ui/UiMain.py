@@ -172,7 +172,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                     parent=self,
                     query_img_file=self.image_to_find_file,
                     media=self.media,
-                    vic_file=self.vic_file
+                    vic_file=self.vic_file,
+                    isBackendCaffe=self.chkCaffe.isChecked()
                 )
                 self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
                 self.VICSort.status.connect(self.__VICMediaSimSort_status)
