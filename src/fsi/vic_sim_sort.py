@@ -2,10 +2,10 @@
 from time import time
 import gc
 from pathlib import Path
+from tempfile import TemporaryFile
 import numpy as np
 import wget
 from psutil import virtual_memory
-from tempfile import TemporaryFile
 from PyQt5 import QtCore
 import cv2 as cv
 from src.fsi.kNN import kNN
@@ -152,8 +152,6 @@ class VICMediaSimSort(QtCore.QThread):
 
     def __loadAllImages(self):
         count, self.tInicioProceso = 0, time()
-        # np.save(self.file_npy, np.array([], dtype='float'))
-        # X = np.load(self.file_npy, mmap_mode='w+')        
         file_npy_tmp = None
         X = np.array([], dtype='float')
         shape_x = 0
