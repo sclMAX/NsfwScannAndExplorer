@@ -11,29 +11,30 @@ import cv2 as cv
 from src.fsi.kNN import kNN
 from src.utils.sort_utils import find_topk_unique
 from src.utils.formats import secondsToHMS
+from src.utils import Image as ImgTools
 
 isCaffe: bool = True
 
-
-def prepareImageToCNN(file_path: str):
-    from keras.preprocessing import image
-    img = image.load_img(file_path, target_size=(224, 224))
-    return image.img_to_array(img)
-
-
-def imageToCNN(file_path: str, isBackendCaffe: bool):
+def imageToCNN(file_path: str):
     try:
-        img_array = prepareImageToCNN(file_path)
-        if isBackendCaffe:
+        ti = time()
+        if isCaffe:
+            img = ImgTools.load_img(file_path, target_size=(224, 224))
+            img_array = ImgTools.img_to_array(img)
             inputblob = cv.dnn.blobFromImage(
                 img_array, 1., (224, 224), (104, 117, 123))
+            del img, img_array
+            print('TIME LOAD IMAGE CAFFE:', time() - ti)
             return inputblob
         else:
+            from keras.preprocessing import image
             from src.utils.imagenet_utils import preprocess_input
-            img = np.expand_dims(img_array, axis=0)
+            img = image.load_img(file_path, target_size=(224, 224))
+            img = image.img_to_array(img)
+            img = np.expand_dims(img, axis=0)
             img = preprocess_input(img)
+            print('TIME LOAD IMAGE TF:', time() - ti)
             return img
-        del img_array
     except:
         raise
 
@@ -47,7 +48,7 @@ class ImageCNN(object):
 
     def __processImg(self):
         file_path: str = self.getFilePath()
-        return imageToCNN(file_path, isCaffe)
+        return imageToCNN(file_path)
 
     def getFilePath(self):
         file_path: str = self.mediaItem.get('RelativeFilePath')
@@ -63,78 +64,7 @@ class ImageCNN(object):
         return self.__processImg()
 
 
-class TaskSetFeatures(QtCore.QThread):
-    finish: QtCore.pyqtSignal = QtCore.pyqtSignal(object, int, object)
-    def __init__(self, parent: QtCore.QObject):
-        super().__init__(parent)
-        self.isScann: bool = False
-        self.idKNN = None
-        self.img_data = None
-
-class TaskTfSetFeatures(TaskSetFeatures):
-    def __init__(self, parent: QtCore.QObject):
-        super().__init__(parent)
-        self.__model: object = None
-
-    def scann(self, idKNN, img_array):
-        from src.utils.imagenet_utils import preprocess_input
-        self.isScann = True
-        self.idKNN = idKNN
-        img_array = np.expand_dims(img_array, axis=0)
-        self.img_data = preprocess_input(img_array)
-        if not self.isRunning():
-            self.start()
-
-    def __loadModel(self):
-        from src.fsi.vgg19 import VGG19
-        from keras.models import Model
-        import keras.backend as K
-        K.clear_session()
-        base_model = VGG19(weights='imagenet')
-        self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
-        return
-
-    def run(self):
-        if not self.__model:
-            self.__loadModel()
-        features = np.array(self.__model.predict(self.img_data).flatten())
-        self.finish.emit(self, self.idKNN, features)
-
-
-class TaskCaffeSetFeatures(TaskSetFeatures):
-    def __init__(self, parent: QtCore.QObject):
-        super().__init__(parent)
-        self.__model: object = None
-
-    def process_img(self, img_array):
-        self.img_data = cv.dnn.blobFromImage(img_array, 1., (224, 224), (104, 117, 123))
-
-    def getFeatures(self):
-        self.__model.setInput(self.img_data)
-        return np.array(self.__model.forward('fc6').flatten())
-
-    def scann(self, idKNN, img_array):
-        self.isScann = True
-        self.idKNN = idKNN
-        self.img_data = self.img_data = cv.dnn.blobFromImage(img_array, 1., (224, 224), (104, 117, 123))
-        if not self.isRunning():
-            self.start()
-    
-    def __loadModel(self):
-        prototxt = 'model/VGG_ILSVRC_19_layers_deploy.prototxt'
-        caffeModel = 'model/VGG_ILSVRC_19_layers.caffemodel'
-        self.__model = cv.dnn.readNetFromCaffe(prototxt=prototxt, caffeModel=caffeModel)
-        return
-
-    def run(self):
-        if not self.__model:
-            self.__loadModel()
-        features = self.getFeatures()
-        self.finish.emit(self, self.idKNN, features)
-
-
 class VICMediaSimSort(QtCore.QThread):
-    mutex = QtCore.QMutex()
     # Signals
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(list)
     saveMedia: QtCore.pyqtSignal = QtCore.pyqtSignal(list)
@@ -143,21 +73,14 @@ class VICMediaSimSort(QtCore.QThread):
 
     def __init__(self, parent: QtCore.QObject, query_img_file: str, media: list, vic_file: str, isBackendCaffe: bool):
         super().__init__(parent)
-        # Files paths
+        #Files paths
         self.parent = parent
         self.base_path: str = str(Path(vic_file).parent)
-        self.file_npy: str = str(
-            Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
+        self.file_npy: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
         self.setBackendCaffe(isBackendCaffe)
-        self.X = None
-        self.img_list: list = []
         self.query_img: ImageCNN = None
         self.VICMedia: list = media
-        self.__model_caffe: object = None
-        self.__model_tf: object = None
-        self.taskCaffe: TaskCaffeSetFeatures = None
-        self.taskTf: TaskTfSetFeatures = None
-        self.isNextTaskCaffe: bool = False
+        self.__model: object = None
         self.__knn: kNN = None
         self.tInicio: int = None
         self.tInicioProceso: int = None
@@ -172,109 +95,55 @@ class VICMediaSimSort(QtCore.QThread):
     def setQuery_img(self, query_img_file: str):
         self.query_img = ImageCNN({'RelativeFilePath': query_img_file}, '')
 
-    def __dowloadProgress(self, value, maximum, _):
-        self.progress.emit(value, maximum)
-        self.status.emit('Descargando Configuracion del Modelo... (%.2fMB de %.2fMB)' % (
-            value / 1024 / 1024, maximum / 1024 / 1024))
-
-    def __getModelCaffe(self):
-        if not self.__model_caffe:
-            def dowloadProgress(self, value, maximum, _):
-                self.progress.emit(value, maximum)
-                self.status.emit('Descargando Configuracion del Modelo... (%.2fMB de %.2fMB)' % (
-                    value / 1024 / 1024, maximum / 1024 / 1024))
-
+    def __loadModel(self):
+        self.progress.emit(0, 0)
+        if isCaffe:
             try:
-                self.status.emit('Cargando Modelo Caffe...')
+                self.status.emit('Cargando Modelo...')
                 prototxt = 'model/VGG_ILSVRC_19_layers_deploy.prototxt'
                 caffeModel = 'model/VGG_ILSVRC_19_layers.caffemodel'
-                self.__model_caffe = cv.dnn.readNetFromCaffe(
-                    prototxt=prototxt, caffeModel=caffeModel)
+                self.__model = cv.dnn.readNetFromCaffe(prototxt=prototxt, caffeModel=caffeModel)
                 del prototxt, caffeModel
             except cv.error:
                 self.status.emit(
                     'Faltan archivos para configurar el modelo VGG19!')
                 url = 'http://www.robots.ox.ac.uk/~vgg/software/very_deep/caffe/VGG_ILSVRC_19_layers.caffemodel'
-                wget.download(url, caffeModel, dowloadProgress)
-                self.__getModelCaffe()
-        return self.__model_caffe
-
-    def __getModelTf(self):
-        if not self.__model_tf:
+                wget.download(url, caffeModel, self.__dowloadProgress)
+                self.__loadModel()
+        else:
             self.status.emit('Cargando Backend Tensorflow...')
             from src.fsi.vgg19 import VGG19
             from keras.models import Model
-            import keras.backend as K
-            K.clear_session()
             self.status.emit('Cargando VGG19 Model...')
             base_model = VGG19(weights='imagenet')
             self.status.emit('Configurando VGG19 Model...')
             #self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('block3_pool').output)
             #self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
             #self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('block5_pool').output)
-            self.__model_tf = Model(
-                inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
-        return self.__model_tf
+            self.__model = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
+        self.status.emit('Modelo Cargado!')
+
+    def __dowloadProgress(self, value, maximum, _):
+        self.progress.emit(value, maximum)
+        self.status.emit('Descargando Configuracion del Modelo... (%.2fMB de %.2fMB)' % (
+            value / 1024 / 1024, maximum / 1024 / 1024))
 
     def __getFeatures(self, img_blob):
+        ti = time()
+        if not self.__model:
+            self.__loadModel()
         if isCaffe:
-            self.__model_caffe = self.__getModelCaffe()
-            self.__model_caffe.setInput(img_blob)
-            return np.array(self.__model_caffe.forward('fc6').flatten())
+            self.__model.setInput(img_blob)
+            # return np.array(self.__model.forward('pool3').flatten())
+            # return np.array(self.__model.forward('pool4').flatten())
+            # return np.array(self.__model.forward('pool5').flatten())
+            pred =  np.array(self.__model.forward('fc6').flatten())
+            print('TIME PROCESS DATA NET CAFFE:', time() - ti)
+            return pred
         else:
-            self.__model_tf = self.__getModelTf()
-            return np.array(self.__model_tf.predict(img_blob).flatten())
-
-    def setFeatures(self, img_path, idKNN, shape_x):
-        try:
-            img_array = prepareImageToCNN(img_path)
-            self.mutex.lock()
-            shape_x += 1
-            self.X = np.resize(
-                self.X, (shape_x, self.query_img.features.shape[0]))
-            self.img_list.append((idKNN, img_array))
-            self.mutex.unlock()
-        except:
-            raise
-        if not self.taskTf and self.img_list:
-            self.taskTf = TaskTfSetFeatures(self.parent)
-            self.taskTf.finish.connect(self.TaskTfSetFeatures_finish)
-            idx, data = self.img_list.pop()
-            self.taskTf.scann(idx, data)
-        if not self.taskCaffe and self.img_list:
-            self.taskCaffe = TaskCaffeSetFeatures(self.parent)
-            self.taskCaffe.finish.connect(self.TaskCfSetFeatures_finish)
-            idx, data = self.img_list.pop()
-            self.taskCaffe.scann(idx, data)
-        return shape_x
-
-    def TaskTfSetFeatures_finish(self, task: TaskSetFeatures, idKNN: int, features):
-        self.mutex.lock()
-        if idKNN and features:
-            self.X[idKNN] = features
-            self.mutex.unlock()
-            task.wait()
-            if self.img_list:
-                self.mutex.lock()
-                idx, data = self.img_list.pop()
-                task.scann(idx, data)
-            else:
-                task.isScann = False
-        self.mutex.unlock()
-    
-    def TaskCfSetFeatures_finish(self, task: TaskSetFeatures, idKNN: int, features):
-        self.mutex.lock()
-        if idKNN and features:
-            self.X[idKNN] = features
-            self.mutex.unlock()
-            task.wait()
-            if self.img_list:
-                self.mutex.lock()
-                idx, data = self.img_list.pop()
-                task.scann(idx, data)
-            else:
-                task.isScann = False
-        self.mutex.unlock()
+            pred =  np.array(self.__model.predict(img_blob).flatten())
+            print('TIME PROCESS DATA NET TF:', time() - ti)
+            return pred
 
     def getFilePath(self, mediaItem: dict):
         file_path: str = mediaItem.get('RelativeFilePath')
@@ -292,14 +161,13 @@ class VICMediaSimSort(QtCore.QThread):
         fs = count / et if et > 0 else 1
         eta: str = secondsToHMS((total - count) * (et / count))
         self.progress.emit(count, total)
-        self.status.emit('Procesando Archivo %d de %d (TT:%s|ETA:%s @%.2f a/s|Mu:%.1f %%) => %s' %
-                         (count, total, secondsToHMS(t - self.tInicio), eta, fs, memp, file))
+        self.status.emit('Procesando Archivo %d de %d (TT:%s|ETA:%s @%.2f a/s|Mu:%.1f %%) => %s' % (count, total, secondsToHMS(t - self.tInicio), eta, fs, memp, file))
         del total, t, et, fs, eta
 
     def __loadAllImages(self):
         count, self.tInicioProceso = 0, time()
         file_npy_tmp = None
-        self.X = np.array([], dtype='float')
+        X = np.array([], dtype='float')
         shape_x = 0
         isMemmap: bool = False
         for item in self.VICMedia:
@@ -310,9 +178,12 @@ class VICMediaSimSort(QtCore.QThread):
                 if not file_path:
                     continue
                 self.__emitLoadStatus(count, file_path, mem.percent)
-                idKNN = shape_x
-                shape_x = self.setFeatures(file_path, idKNN, shape_x)
-                item['IdKNN'] = idKNN
+                img_blob = imageToCNN(file_path)
+                idxStr = str(shape_x)
+                item['IdKNN'] = shape_x
+                shape_x += 1
+                X = np.resize(X, (shape_x, self.query_img.features.shape[0]))
+                X[int(idxStr)] = self.__getFeatures(img_blob)
                 if self.n_neighbors < 50:
                     self.n_neighbors += 1
                 else:
@@ -321,37 +192,29 @@ class VICMediaSimSort(QtCore.QThread):
                     print('MEMMAP ACTIVADO!')
                     self.status.emit('Activando Mapeo de Memoria...')
                     self.progress.emit(0, 0)
-                    self.mutex.lock()
                     isMemmap = True
                     file_npy_tmp = TemporaryFile()
-                    np.save(file_npy_tmp, self.X)
+                    np.save(file_npy_tmp, X)
                     file_npy_tmp.close()
-                    self.X = np.load(file_npy_tmp, mmap_mode='r+')
-                    self.mutex.unlock()
+                    X = np.load(file_npy_tmp, mmap_mode='r+')
                 gc.collect()
             except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
                 item['IdKNN'] = -1
                 print('IMAGEN ERROR:', file_path)
                 continue
-        self.status.emit('Esperando Tareas en segundo plano...')
-        self.progress.emit(0, 0)
-        while self.taskCaffe.isScann or self.taskTf.isScann:
-            pass
-        self.__prepareKNN(self.X)
+        self.__prepareKNN(X)
         self.status.emit('Guardando datos KNN Net...')
         self.progress.emit(0, 0)
         if file_npy_tmp:
             file_npy_tmp.close()
-        np.save(self.file_npy, self.X)
-        print('TIEMPO ESCANEO DE IMAGENES:',
-              secondsToHMS(time() - self.tInicio))
-        del count, shape_x, file_path
+        np.save(self.file_npy, X)
+        print('TIEMPO ESCANEO DE IMAGENES:', secondsToHMS(time() - self.tInicio))
+        del count, X, shape_x, file_path
         gc.collect()
 
     def __prepareKNN(self, X):
         self.__knn = kNN()
-        self.__knn.compile(n_neighbors=self.n_neighbors,
-                           algorithm="auto", metric="cosine")
+        self.__knn.compile(n_neighbors=self.n_neighbors, algorithm="auto", metric="cosine")
         self.status.emit('Entrenando KNN Net...')
         self.progress.emit(0, 0)
         self.__knn.fit(X)
@@ -384,12 +247,10 @@ class VICMediaSimSort(QtCore.QThread):
     def __orderIndices(self):
         self.status.emit('Analizando Media Items...')
         self.progress.emit(0, 0)
-        distances, indices = self.__knn.predict(
-            np.array([self.query_img.features]))
+        distances, indices = self.__knn.predict(np.array([self.query_img.features]))
         distances = distances.flatten()
         indices = indices.flatten()
-        indices, distances = find_topk_unique(
-            indices, distances, self.n_neighbors)
+        indices, distances = find_topk_unique(indices, distances, self.n_neighbors)
         del distances
         gc.collect()
         return indices
