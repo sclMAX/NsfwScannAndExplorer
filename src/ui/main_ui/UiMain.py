@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-import gc
 from src.ui.main_ui.ui_main import Ui_MainWindow
 from src.ui.scann_ui.UiScann import DlgScanner, QtWidgets, QtCore, QtGui
 from src.Nsfw.vic13 import readVICFromFile, getMediaFormVIC, updateMedia
@@ -395,6 +394,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.lblStatus.setText(self.vic_file)
             self.VIC = readVICFromFile(self.vic_file)
             self.media = getMediaFormVIC(self.VIC)
+            self.VICSort = None
             self.current_page = 1
             self.__updateView()
 
