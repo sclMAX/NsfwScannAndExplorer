@@ -40,7 +40,7 @@
        <item>
         <widget class="QToolButton" name="btnScanner">
          <property name="toolTip">
-          <string>Abrir Nsfw Scanner.</string>
+          <string>Abrir Scanner.</string>
          </property>
          <property name="accessibleName">
           <string>Escanear Directorio.</string>
@@ -414,8 +414,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>843</width>
-             <height>538</height>
+             <width>851</width>
+             <height>540</height>
             </rect>
            </property>
            <property name="layoutDirection">
@@ -678,29 +678,60 @@
         <property name="spacing">
          <number>0</number>
         </property>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
-         <widget class="QLabel" name="lblProgress">
+         <layout class="QVBoxLayout" name="verticalLayout_10">
+          <item>
+           <widget class="QLabel" name="lblProgress">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QProgressBar" name="progressBar">
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>0</number>
+            </property>
+            <property name="value">
+             <number>0</number>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QToolButton" name="btnStop">
+          <property name="toolTip">
+           <string>Parar Proceso</string>
+          </property>
+          <property name="accessibleName">
+           <string>Escanear Directorio.</string>
+          </property>
           <property name="text">
            <string/>
           </property>
-          <property name="wordWrap">
-           <bool>true</bool>
+          <property name="icon">
+           <iconset resource="../resources.qrc">
+            <normaloff>:/iconos/pause</normaloff>:/iconos/pause</iconset>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QProgressBar" name="progressBar">
-          <property name="minimum">
-           <number>0</number>
-          </property>
-          <property name="maximum">
-           <number>0</number>
-          </property>
-          <property name="value">
-           <number>0</number>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
+          <property name="iconSize">
+           <size>
+            <width>48</width>
+            <height>48</height>
+           </size>
           </property>
          </widget>
         </item>

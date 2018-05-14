@@ -71,8 +71,10 @@ class VICMediaSimSort(QtCore.QThread):
         super().__init__(parent)
         #Files paths
         self.parent = parent
+        self.isStop: bool = False
         self.base_path: str = str(Path(vic_file).parent)
         self.file_npy: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
+        self.file_npy_tmp: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '_tmp.npy'))
         self.isBackendCaffe = isBackendCaffe
         self.setBackendCaffe(isBackendCaffe)
         self.query_img: ImageCNN = None
@@ -87,6 +89,10 @@ class VICMediaSimSort(QtCore.QThread):
     @QtCore.pyqtSlot(bool)
     def setBackendCaffe(self, isBackendCaffe: bool):
         self.isBackendCaffe = isBackendCaffe
+    
+    @QtCore.pyqtSlot()
+    def stop(self):
+        self.isStop = True
 
     def setQuery_img(self, query_img_file: str):
         self.query_img = ImageCNN({'RelativeFilePath': query_img_file}, '')
@@ -150,19 +156,39 @@ class VICMediaSimSort(QtCore.QThread):
         self.status.emit('Procesando Archivo %d de %d (TT:%s|ETA:%s @%.2f a/s|Mu:%.1f %%) => %s' % (count, total, secondsToHMS(t - self.tInicio), eta, fs, memp, file))
         del total, t, et, fs, eta
 
+    def __chkResume(self):
+        if Path(self.file_npy_tmp).exists():
+            self.status.emit('Cargando archivo de caracteristicas...')
+            self.progress.emit(0, 0)
+            X = np.load(self.file_npy_tmp, mmap_mode='r+')
+            shape_x = X.shape[0]
+            self.n_neighbors = shape_x if shape_x < 50 else 50
+            return True, True, X, shape_x
+        return False, False, np.array([], dtype='float'), 0
+
     def __loadAllImages(self):
         count, self.tInicioProceso = 0, time()
         file_npy_tmp = None
-        X = np.array([], dtype='float')
-        shape_x = 0
-        isMemmap: bool = False
+        isResume, isMemmap, X, shape_x = self.__chkResume()
+        save_file: str = self.file_npy
+        isComplete: bool = True
         for item in self.VICMedia:
             try:
                 count += 1
-                mem = virtual_memory()
+                if isResume:
+                    idKnn = item.get('IdKNN')
+                    if idKnn != shape_x:
+                        continue
+                    else:
+                        isResume = False
+                if self.isStop:
+                    save_file = self.file_npy_tmp
+                    isComplete = False
+                    break
                 file_path = self.getFilePath(item)
                 if not file_path:
                     continue
+                mem = virtual_memory()
                 self.__emitLoadStatus(count, file_path, mem.percent)
                 img_blob = imageToCNN(file_path, self.isBackendCaffe)
                 idxStr = str(shape_x)
@@ -193,7 +219,9 @@ class VICMediaSimSort(QtCore.QThread):
         self.progress.emit(0, 0)
         if file_npy_tmp:
             file_npy_tmp.close()
-        np.save(self.file_npy, X)
+        np.save(save_file, X)
+        if isComplete and Path(self.file_npy_tmp).exists():
+            Path(self.file_npy_tmp).unlink()
         print('TIEMPO ESCANEO DE IMAGENES:', secondsToHMS(time() - self.tInicio))
         del count, X, shape_x, file_path
         gc.collect()
@@ -243,10 +271,11 @@ class VICMediaSimSort(QtCore.QThread):
 
     def run(self):
         self.tInicio = time()
+        self.isStop = False
         self.status.emit('Escaneando Imagen de muestra...')
         self.progress.emit(0, 0)
         self.query_img.features = self.__getFeatures(self.query_img.getData(self.isBackendCaffe))
-        if not self.__knn:
+        if not self.__knn or Path(self.file_npy_tmp).exists():
             idKNN = self.VICMedia[0].get('IdKNN')
             if not self.__loadKNN() or not isinstance(idKNN, int):
                 self.__loadAllImages()

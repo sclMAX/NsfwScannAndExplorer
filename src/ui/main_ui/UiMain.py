@@ -40,6 +40,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.VICSort: VICMediaSimSort = None
         self.progressBar.setVisible(False)
+        self.btnStop.setVisible(False)
         self.btnListUp.clicked.connect(self.btnListUp_click)
         self.btnListDown.clicked.connect(self.btnListDown_click)
         self.slrFiltro.valueChanged.connect(self.pgbFiltro.setValue)
@@ -181,6 +182,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
             else:
                 self.VICSort.setQuery_img(self.image_to_find_file)
+            self.btnStop.setVisible(True)
+            self.btnStop.clicked.connect(self.VICSort.stop)
             self.VICSort.start(priority=QtCore.QThread.HighestPriority)
         else:
             self.btnSortVIC.setEnabled(False)
@@ -211,6 +214,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
         self.listView.setEnabled(True)
         self.gbBuscarImagen.setEnabled(True)
         self.isInSortProcess = False
+        self.btnStop.setVisible(False)
         if sorted_media:
             self.btnSortVIC.setEnabled(False)
             self.media = sorted_media

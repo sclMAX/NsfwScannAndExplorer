@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'src/ui/main_ui/ui_main.ui'
+# Form implementation generated from reading ui file 'main_ui/ui_main.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -174,7 +174,7 @@ class Ui_MainWindow(object):
         self.listView.setWidgetResizable(True)
         self.listView.setObjectName("listView")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 843, 538))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 851, 540))
         self.scrollAreaWidgetContents.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
@@ -289,19 +289,33 @@ class Ui_MainWindow(object):
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setSpacing(0)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.verticalLayout_3.addLayout(self.verticalLayout_2)
+        self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.verticalLayout_10 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_10.setObjectName("verticalLayout_10")
         self.lblProgress = QtWidgets.QLabel(self.centralwidget)
         self.lblProgress.setText("")
         self.lblProgress.setWordWrap(True)
         self.lblProgress.setObjectName("lblProgress")
-        self.verticalLayout_2.addWidget(self.lblProgress)
+        self.verticalLayout_10.addWidget(self.lblProgress)
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(0)
         self.progressBar.setProperty("value", 0)
         self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
         self.progressBar.setObjectName("progressBar")
-        self.verticalLayout_2.addWidget(self.progressBar)
-        self.verticalLayout_3.addLayout(self.verticalLayout_2)
+        self.verticalLayout_10.addWidget(self.progressBar)
+        self.horizontalLayout_5.addLayout(self.verticalLayout_10)
+        self.btnStop = QtWidgets.QToolButton(self.centralwidget)
+        self.btnStop.setText("")
+        icon13 = QtGui.QIcon()
+        icon13.addPixmap(QtGui.QPixmap(":/iconos/pause"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.btnStop.setIcon(icon13)
+        self.btnStop.setIconSize(QtCore.QSize(48, 48))
+        self.btnStop.setObjectName("btnStop")
+        self.horizontalLayout_5.addWidget(self.btnStop)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_5)
         self.verticalLayout_4.addLayout(self.verticalLayout_3)
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -311,7 +325,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "VIC Report Explorer v1.0 by MAX"))
-        self.btnScanner.setToolTip(_translate("MainWindow", "Abrir Nsfw Scanner."))
+        self.btnScanner.setToolTip(_translate("MainWindow", "Abrir Scanner."))
         self.btnScanner.setAccessibleName(_translate("MainWindow", "Escanear Directorio."))
         self.btnOpen.setToolTip(_translate("MainWindow", "Abrir Reporte."))
         self.btnSave.setToolTip(_translate("MainWindow", "Guardar reporte."))
@@ -333,4 +347,5 @@ class Ui_MainWindow(object):
         self.lblFiltro.setText(_translate("MainWindow", ">15%"))
         self.btnFiltro_Invertir.setToolTip(_translate("MainWindow", "Invertir filtro."))
         self.slrFiltro.setToolTip(_translate("MainWindow", "<html><head/><body><p>Especificar Filtro por Probabilidad.</p></body></html>"))
-
+        self.btnStop.setToolTip(_translate("MainWindow", "Parar Proceso"))
+        self.btnStop.setAccessibleName(_translate("MainWindow", "Escanear Directorio."))
