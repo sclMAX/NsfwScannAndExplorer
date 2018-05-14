@@ -236,7 +236,7 @@ class NsfwScann(QtCore.QThread):
             if self.media:
                 self.status.emit(Message(getVicCaseData(VIC)))
                 self.basePath = basePath
-                self.start()
+                self.start(priority=QtCore.QThread.HighestPriority)
             else:
                 self.status.emit(Message(
                     'No se pudo recuperar los datos del Archivo VIC!', False, DANGER))

@@ -13,9 +13,8 @@ from src.utils.sort_utils import find_topk_unique
 from src.utils.formats import secondsToHMS
 from src.utils import Image as ImgTools
 
-isCaffe: bool = True
 
-def imageToCNN(file_path: str):
+def imageToCNN(file_path: str, isCaffe: bool):
     try:
         if isCaffe:
             img = ImgTools.load_img(file_path, target_size=(224, 224))
@@ -45,7 +44,7 @@ class ImageCNN(object):
 
     def __processImg(self):
         file_path: str = self.getFilePath()
-        return imageToCNN(file_path)
+        return imageToCNN(file_path, True)
 
     def getFilePath(self):
         file_path: str = self.mediaItem.get('RelativeFilePath')
@@ -74,6 +73,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.parent = parent
         self.base_path: str = str(Path(vic_file).parent)
         self.file_npy: str = str(Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
+        self.isBackendCaffe = isBackendCaffe
         self.setBackendCaffe(isBackendCaffe)
         self.query_img: ImageCNN = None
         self.VICMedia: list = media
@@ -86,15 +86,14 @@ class VICMediaSimSort(QtCore.QThread):
 
     @QtCore.pyqtSlot(bool)
     def setBackendCaffe(self, isBackendCaffe: bool):
-        global isCaffe
-        isCaffe = isBackendCaffe
+        self.isBackendCaffe = isBackendCaffe
 
     def setQuery_img(self, query_img_file: str):
         self.query_img = ImageCNN({'RelativeFilePath': query_img_file}, '')
 
     def __loadModel(self):
         self.progress.emit(0, 0)
-        if isCaffe:
+        if self.isBackendCaffe:
             try:
                 self.status.emit('Cargando Modelo...')
                 prototxt = 'model/VGG_ILSVRC_19_layers_deploy.prototxt'
@@ -125,7 +124,7 @@ class VICMediaSimSort(QtCore.QThread):
     def __getFeatures(self, img_blob):
         if not self.__model:
             self.__loadModel()
-        if isCaffe:
+        if self.isBackendCaffe:
             self.__model.setInput(img_blob)
             pred = np.array(self.__model.forward('fc6').flatten())
             return pred
@@ -166,7 +165,7 @@ class VICMediaSimSort(QtCore.QThread):
                 if not file_path:
                     continue
                 self.__emitLoadStatus(count, file_path, mem.percent)
-                img_blob = imageToCNN(file_path)
+                img_blob = imageToCNN(file_path, self.isBackendCaffe)
                 idxStr = str(shape_x)
                 item['IdKNN'] = shape_x
                 shape_x += 1

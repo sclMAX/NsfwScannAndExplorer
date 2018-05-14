@@ -181,7 +181,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
             else:
                 self.VICSort.setQuery_img(self.image_to_find_file)
-            self.VICSort.start()
+            self.VICSort.start(priority=QtCore.QThread.HighestPriority)
         else:
             self.btnSortVIC.setEnabled(False)
 
