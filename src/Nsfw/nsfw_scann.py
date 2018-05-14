@@ -192,13 +192,12 @@ class NsfwScann(QtCore.QThread):
         try:
             with open(file_path, "rb") as file:
                 fileInfo = fleep.get(file.read(128))
+                file.close()
             file_type = fileInfo.type
             file_extension = fileInfo.extension
         except IOError:
             file_type = ['']
             file_extension = ['']
-        finally:
-            file.close()
         if 'video' in file_type:
             score = self.__scannVideo(file_path)
         else:
