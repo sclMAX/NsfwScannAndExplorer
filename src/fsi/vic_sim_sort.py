@@ -42,9 +42,9 @@ class ImageCNN(object):
         self.features = None
         self.idx: int = 0
 
-    def __processImg(self):
+    def __processImg(self, isCaffe: bool):
         file_path: str = self.getFilePath()
-        return imageToCNN(file_path, True)
+        return imageToCNN(file_path, isCaffe)
 
     def getFilePath(self):
         file_path: str = self.mediaItem.get('RelativeFilePath')
@@ -56,8 +56,8 @@ class ImageCNN(object):
             return file_path
         return ''
 
-    def getData(self):
-        return self.__processImg()
+    def getData(self, isCaffe: bool):
+        return self.__processImg(isCaffe)
 
 
 class VICMediaSimSort(QtCore.QThread):
@@ -128,9 +128,8 @@ class VICMediaSimSort(QtCore.QThread):
             self.__model.setInput(img_blob)
             pred = np.array(self.__model.forward('fc6').flatten())
             return pred
-        else:
-            pred = np.array(self.__model.predict(img_blob).flatten())
-            return pred
+        pred = np.array(self.__model.predict(img_blob).flatten())
+        return pred
 
     def getFilePath(self, mediaItem: dict):
         file_path: str = mediaItem.get('RelativeFilePath')
@@ -246,7 +245,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.tInicio = time()
         self.status.emit('Escaneando Imagen de muestra...')
         self.progress.emit(0, 0)
-        self.query_img.features = self.__getFeatures(self.query_img.getData())
+        self.query_img.features = self.__getFeatures(self.query_img.getData(self.isBackendCaffe))
         if not self.__knn:
             idKNN = self.VICMedia[0].get('IdKNN')
             if not self.__loadKNN() or not isinstance(idKNN, int):
