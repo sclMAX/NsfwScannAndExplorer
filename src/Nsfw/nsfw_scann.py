@@ -150,7 +150,7 @@ class NsfwScann(QtCore.QThread):
             self.video_progress.emit(0, fcount)
             frameToRead = 0
             while cap.isOpened():
-                frameToRead += fps if(fps * 4 < fcount) else fps // 2
+                frameToRead += fps
                 if not frameToRead < fcount:
                     frameToRead = fcount
                 cap.set(1, frameToRead - 1)
@@ -173,6 +173,8 @@ class NsfwScann(QtCore.QThread):
                 else:
                     break
             return maxScore
+        except:
+            return -1
         finally:
             cap.release()
             self.video_scann.emit(False)
