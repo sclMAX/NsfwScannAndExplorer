@@ -1,6 +1,7 @@
 
 from time import time
 import gc
+import pickle
 from pathlib import Path
 from tempfile import TemporaryFile
 import numpy as np
@@ -164,18 +165,20 @@ class VICMediaSimSort(QtCore.QThread):
         if Path(self.file_npy_tmp).exists():
             self.status.emit('Cargando archivo de caracteristicas...')
             self.progress.emit(0, 0)
-            X = np.load(self.file_npy_tmp, mmap_mode='r+')
-            shape_x = X.shape[0]
+            with open(self.file_npy_tmp, 'r+b')as file:
+                X: list = pickle.load(file)
+            shape_x = 0
+            for _ in X:
+                shape_x += 1 
             self.n_neighbors = shape_x if shape_x < 50 else 50
-            return True, True, X, shape_x
-        return False, False, X, 0
+            return True, True, True, X, shape_x
+        return True, False, False, X, 0
 
     def __loadAllImages(self):
         count, self.tInicioProceso = 0, time()
         file_npy_tmp = None
-        isResume, isMemmap, X, shape_x = self.__chkResume()
+        isComplete, isResume, isMemmap, X, shape_x = self.__chkResume()
         save_file: str = self.file_npy
-        isComplete: bool = True
         total = len(self.VICMedia)
         for item in self.VICMedia:
             try:
@@ -196,17 +199,14 @@ class VICMediaSimSort(QtCore.QThread):
                 mem = virtual_memory()
                 self.__emitLoadStatus(total, count, file_path, mem.percent)
                 img_blob = imageToCNN(file_path, self.isBackendCaffe)
-                idxStr = str(shape_x)
                 item['IdKNN'] = shape_x
-                shape_x += 1
                 X.append(self.__getFeatures(img_blob))
-                #X = np.resize(X, (shape_x, self.query_img.features.shape[0]))
-                #X[int(idxStr)] = self.__getFeatures(img_blob)
+                shape_x += 1
                 if self.n_neighbors < 50:
                     self.n_neighbors += 1
                 else:
                     self.n_neighbors = 50
-                if mem.percent > 70 and not isMemmap:
+                if mem.percent > 40 and not isMemmap:
                     print('MEMMAP ACTIVADO!')
                     self.status.emit('Activando Mapeo de Memoria...')
                     self.progress.emit(0, 0)
@@ -214,23 +214,22 @@ class VICMediaSimSort(QtCore.QThread):
                     file_npy_tmp = TemporaryFile()
                     np.save(file_npy_tmp, X)
                     file_npy_tmp.close()
-                    X = np.load(file_npy_tmp, mmap_mode='r+')
+                    X: list = np.load(file_npy_tmp, mmap_mode='r+')
             except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
                 item['IdKNN'] = -1
                 print('IMAGEN ERROR:', file_path)
                 continue
         self.__prepareKNN(X)
-        self.status.emit('Guardando datos KNN Net...')
+        self.status.emit('Guardando datos escaneados...')
         self.progress.emit(0, 0)
         if file_npy_tmp:
             file_npy_tmp.close()
-        np.save(save_file, X)
+        with open(save_file, 'w+b') as file:
+            pickle.dump(X, file, protocol=pickle.HIGHEST_PROTOCOL)
         if isComplete and Path(self.file_npy_tmp).exists():
             Path(self.file_npy_tmp).unlink()
         print('TIEMPO ESCANEO DE IMAGENES:',
               secondsToHMS(time() - self.tInicio))
-        del count, X, shape_x, file_path
-        gc.collect()
 
     def __prepareKNN(self, X):
         self.__knn = kNN()
@@ -260,8 +259,6 @@ class VICMediaSimSort(QtCore.QThread):
             X = np.load(self.file_npy, mmap_mode='r+')
             self.setN_neighbors()
             self.__prepareKNN(X)
-            del X
-            gc.collect()
             return True
         return False
 
@@ -303,7 +300,8 @@ class VICMediaSimSort(QtCore.QThread):
             self.status.emit('Reordenando Imagen %d de %d...' % (count, total))
             self.progress.emit(count, total)
             for media in self.VICMedia:
-                if media['IdKNN'] == idx:
+                idKnn = media.get('IdKNN')
+                if idKnn == idx:
                     self.VICMedia.remove(media)
                     resultMedia.append(media)
                     break

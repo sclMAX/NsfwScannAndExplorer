@@ -410,7 +410,7 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.setProgressStatus('Guardando Reporte...')
                 newVIC = self.VIC.copy()
                 updateMedia(newVIC, self.media)
-                json.dump(newVIC, open(self.save_file, 'w'))
+                json.dump(newVIC, open(self.save_file, 'w+'))
                 self.setProgressStatus(
                     'Reporte guardado en %s' % self.save_file)
                 return True
