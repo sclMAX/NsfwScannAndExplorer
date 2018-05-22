@@ -80,6 +80,7 @@ class NsfwScann(QtCore.QThread):
                 Message('Cargando Modelo...', True, NORMAL, False))
             model_loaded = cv.dnn.readNetFromCaffe(
                 prototxt=self.model_file, caffeModel=self.weight_file)
+            model_loaded.setPreferableTarget(cv.dnn.DNN_TARGET_OPENCL)
             self.status.emit(Message('Modelo Cargado!', False, NORMAL, False))
             return model_loaded
         except FileNotFoundError:
@@ -89,8 +90,13 @@ class NsfwScann(QtCore.QThread):
 
     def __getScore(self, inputBlob):
         self.model.setInput(inputBlob)
-        pred: float = self.model.forward()[0][1]
-        return pred
+        try:
+            pred: float = self.model.forward()[0][1]
+            return pred
+        except cv.error:
+            self.status.emit(Message('OpenCL no Soportado!... Cambiando A CPU...', False, DANGER, True))
+            self.model.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
+            return self.__getScore(inputBlob)
 
     def __video_emit(self, frame, score):
         height, width, _ = frame.shape
