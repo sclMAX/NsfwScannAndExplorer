@@ -277,7 +277,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         if media:
             updateMedia(self.VIC, media)
             if self.isScannNsfw:
-                self.nsfw.scannVIC(self.VIC, '', self.saveFolder)
+                self.nsfw.scannVIC(self.VIC, '', self.saveFolder, self.cbxProcesador.currentIndex())
             else:
                 self.nsfw_finish(media)
         else:
