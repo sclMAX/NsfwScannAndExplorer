@@ -56,6 +56,7 @@ class NsfwScann(QtCore.QThread):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.dnn_target = cv.dnn.DNN_TARGET_CPU
 
     @QtCore.pyqtSlot(int)
     def setMinScore(self, score):
@@ -80,7 +81,7 @@ class NsfwScann(QtCore.QThread):
                 Message('Cargando Modelo...', True, NORMAL, False))
             model_loaded = cv.dnn.readNetFromCaffe(
                 prototxt=self.model_file, caffeModel=self.weight_file)
-            model_loaded.setPreferableTarget(cv.dnn.DNN_TARGET_OPENCL)
+            model_loaded.setPreferableTarget(self.dnn_target)
             self.status.emit(Message('Modelo Cargado!', False, NORMAL, False))
             return model_loaded
         except FileNotFoundError:
@@ -94,9 +95,10 @@ class NsfwScann(QtCore.QThread):
             pred: float = self.model.forward()[0][1]
             return pred
         except cv.error:
-            self.status.emit(Message('OpenCL no Soportado!... Cambiando A CPU...', False, DANGER, True))
-            self.model.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
-            return self.__getScore(inputBlob)
+            self.status.emit(Message('Procesador NO Soportado!', False, DANGER, True))
+            self.isCanceled =True
+            self.finish.emit(None)
+            return -10
 
     def __video_emit(self, frame, score):
         height, width, _ = frame.shape
@@ -235,7 +237,7 @@ class NsfwScann(QtCore.QThread):
             txt: str = 'TT: %s @ %.2f A/seg' % (strTT, self.archivos / ett)
             self.statusBar.emit(txt)
 
-    def scannVIC(self, VIC, basePath, saveFolder):
+    def scannVIC(self, VIC, basePath, saveFolder, dnn_target: int):
         self.ti = time()
         self.saveFolder = saveFolder
         if isVICValid(VIC):
@@ -243,6 +245,19 @@ class NsfwScann(QtCore.QThread):
             if self.media:
                 self.status.emit(Message(getVicCaseData(VIC)))
                 self.basePath = basePath
+                try:
+                    if dnn_target == 2:
+                        self.dnn_target = cv.dnn.DNN_TARGET_OPENCL_FP16
+                    elif dnn_target == 1:
+                        self.dnn_target = cv.dnn.DNN_TARGET_OPENCL
+                    else:
+                        self.dnn_target = cv.dnn.DNN_TARGET_CPU
+                    if self.model:
+                        self.model.setPreferableTarget(self.dnn_target)
+                except AttributeError:
+                    self.status.emit(Message('Procesador NO Soportado!', False, DANGER, True))
+                    self.finish.emit(None)
+                    return
                 self.start(priority=QtCore.QThread.HighestPriority)
             else:
                 self.status.emit(Message(
@@ -284,6 +299,8 @@ class NsfwScann(QtCore.QThread):
             elif score == -1:
                 msg = Message('NO IMAGEN! - %s' % (img_path), False, DANGER)
                 self.noImageFile += 1
+            elif score == -10:
+                msg = Message('')
             else:
                 msg = Message('NO %2.4f - %s' %
                               (score, img_path), False, WARNING)

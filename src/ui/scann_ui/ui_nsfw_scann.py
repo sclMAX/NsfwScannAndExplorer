@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'src/ui/scann_ui/ui_nsfw_scann.ui'
+# Form implementation generated from reading ui file 'scann_ui/ui_nsfw_scann.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -131,6 +131,15 @@ class Ui_dlgNsfwScanner(object):
         self.groupBox_2.setObjectName("groupBox_2")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.groupBox_2)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.label = QtWidgets.QLabel(self.groupBox_2)
+        self.label.setObjectName("label")
+        self.verticalLayout_3.addWidget(self.label)
+        self.cbxProcesador = QtWidgets.QComboBox(self.groupBox_2)
+        self.cbxProcesador.setObjectName("cbxProcesador")
+        self.cbxProcesador.addItem("")
+        self.cbxProcesador.addItem("")
+        self.cbxProcesador.addItem("")
+        self.verticalLayout_3.addWidget(self.cbxProcesador)
         self.chkScannNsfw = QtWidgets.QCheckBox(self.groupBox_2)
         self.chkScannNsfw.setChecked(True)
         self.chkScannNsfw.setObjectName("chkScannNsfw")
@@ -516,6 +525,7 @@ class Ui_dlgNsfwScanner(object):
         self.lblSaveFolder.setBuddy(self.btnScannFolder)
 
         self.retranslateUi(dlgNsfwScanner)
+        self.cbxProcesador.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(dlgNsfwScanner)
 
     def retranslateUi(self, dlgNsfwScanner):
@@ -529,6 +539,10 @@ class Ui_dlgNsfwScanner(object):
         self.btnSave.setToolTip(_translate("dlgNsfwScanner", "Guardar Reporte."))
         self.lblSaveFolder.setText(_translate("dlgNsfwScanner", "Seleccione el Archivo para guaradar el Reporte!"))
         self.groupBox_2.setTitle(_translate("dlgNsfwScanner", "Configuraciones"))
+        self.label.setText(_translate("dlgNsfwScanner", "Procesador Preferido"))
+        self.cbxProcesador.setItemText(0, _translate("dlgNsfwScanner", "CPU"))
+        self.cbxProcesador.setItemText(1, _translate("dlgNsfwScanner", "OpenCL"))
+        self.cbxProcesador.setItemText(2, _translate("dlgNsfwScanner", "OpenCL FP16"))
         self.chkScannNsfw.setToolTip(_translate("dlgNsfwScanner", "Si esta activado realiza en escaneo de las imagenes con Nsfw"))
         self.chkScannNsfw.setText(_translate("dlgNsfwScanner", "Realizar Escaneo Nsfw"))
         self.chkShowImage.setToolTip(_translate("dlgNsfwScanner", "Muestra una vista previa de las imagenes que esten por sobre la Probabilidad espesificada."))
@@ -544,5 +558,3 @@ class Ui_dlgNsfwScanner(object):
         self.btnClose.setToolTip(_translate("dlgNsfwScanner", "Cancelar"))
         self.btnClose.setStatusTip(_translate("dlgNsfwScanner", "Cerrar."))
         self.logImages.setTitle(_translate("dlgNsfwScanner", "Ultimos Nsfw --->"))
-
-

@@ -220,7 +220,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         elif self.vicFile:
             self.VIC = readVICFromFile(self.vicFile)
             basePath = Path(self.vicFile).parent
-            self.nsfw.scannVIC(self.VIC, str(basePath), self.saveFolder)
+            self.nsfw.scannVIC(self.VIC, str(basePath), self.saveFolder, self.cbxProcesador.currentIndex())
         else:
             self.showProsess(False)
 
