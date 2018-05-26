@@ -137,7 +137,7 @@ class NsfwScann(QtCore.QThread):
                 else:
                     break
             return maxScore
-        except (RuntimeError, ValueError, OSError, Image.DecompressionBombError):
+        except (SystemError, RuntimeError, ValueError, OSError, Image.DecompressionBombError):
             score, img = self.__scannImage(file)
             if (score >= self.minScore)and(img):
                 self.image.emit(ImageNsfw(score, file))
@@ -154,6 +154,7 @@ class NsfwScann(QtCore.QThread):
             self.video_scann.emit(True)
             maxScore = 0
             isOneSend = False
+            cap = None
             cap = cv.VideoCapture(file)
             fps = abs(cap.get(cv.CAP_PROP_FPS))
             fcount = abs(cap.get(cv.CAP_PROP_FRAME_COUNT))
@@ -183,7 +184,7 @@ class NsfwScann(QtCore.QThread):
                 else:
                     break
             return maxScore
-        except IOError:
+        except (SystemError, IOError):
             return -1
         finally:
             if cap:
