@@ -96,8 +96,7 @@ class NsfwScann(QtCore.QThread):
             return pred
         except cv.error:
             self.status.emit(Message('Procesador NO Soportado!', False, DANGER, True))
-            self.isCanceled =True
-            self.finish.emit(None)
+            self.stop()
             return -10
 
     def __video_emit(self, frame, score):
@@ -116,7 +115,10 @@ class NsfwScann(QtCore.QThread):
             maxScore = 0
             n = imageio.mimread(file)
             cap = cv.VideoCapture(file)
-            totalFrames: int = n
+            if isinstance(n, list):
+                totalFrames = len(n)
+            else:
+                totalFrames = int(n)
             self.video_progress.emit(0, totalFrames)
             frame_nro: int = 0
             while cap.isOpened():
@@ -135,7 +137,7 @@ class NsfwScann(QtCore.QThread):
                 else:
                     break
             return maxScore
-        except:
+        except (RuntimeError, ValueError, OSError, Image.DecompressionBombError):
             score, img = self.__scannImage(file)
             if (score >= self.minScore)and(img):
                 self.image.emit(ImageNsfw(score, file))
@@ -181,10 +183,11 @@ class NsfwScann(QtCore.QThread):
                 else:
                     break
             return maxScore
-        except:
+        except IOError:
             return -1
         finally:
-            cap.release()
+            if cap:
+                cap.release()
             self.video_scann.emit(False)
 
     def __scannImage(self, img):
@@ -195,8 +198,11 @@ class NsfwScann(QtCore.QThread):
             inputblob = cv.dnn.blobFromImage(
                 img_na, 1., (224, 224), (104, 117, 123), False, False)
             return (self.__getScore(inputblob), img)
-        except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
+        except (ValueError, SyntaxError, OSError, TypeError, RuntimeError, Image.DecompressionBombError):
             return (-1, None)
+        except ImportError:
+            self.status.emit(Message('PILLOW no instalado!', False, DANGER, True))
+            self.stop()
 
     def getScore(self, file_path: str):
         try:
