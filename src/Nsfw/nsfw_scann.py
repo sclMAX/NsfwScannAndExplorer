@@ -21,11 +21,6 @@ class ImageNsfw():
 
 
 class NsfwScann(QtCore.QThread):
-
-    # Model
-    model: object = None
-    weight_file: str = 'model/resnet_50_1by2_nsfw.caffemodel'
-    model_file: str = 'model/deploy.prototxt'
     # Signals
     status: QtCore.pyqtSignal = QtCore.pyqtSignal(Message)
     statusBar: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
@@ -37,26 +32,29 @@ class NsfwScann(QtCore.QThread):
     video_scann: QtCore.pyqtSignal = QtCore.pyqtSignal(bool)
     finish: QtCore.pyqtSignal = QtCore.pyqtSignal(object)
 
-    # Scann Vars
-    media: list = []
-    isCanceled: bool = False
-    isInPause: bool = False
-    saveFolder: str = ''
-    basePath: str = ''
-    minScore: float = 0
-    ti: int = time()
-    tip: int = 0
-    currentFile: int = 0
-    totalFiles: int = 0
-    filesInReport: int = 0
-    imageFiles: int = 0
-    noImageFile: int = 0
-    gif_as_frame: bool = True
-    isPauseEmit: bool = False
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.isScannVideos: bool = True
+        # Model
+        self.model: object = None
+        self.weight_file: str = 'model/resnet_50_1by2_nsfw.caffemodel'
+        self.model_file: str = 'model/deploy.prototxt'
+        # Scann Vars
+        self.media: list = []
+        self.isCanceled: bool = False
+        self.isInPause: bool = False
+        self.saveFolder: str = ''
+        self.basePath: str = ''
+        self.minScore: float = 0
+        self.ti: int = time()
+        self.tip: int = 0
+        self.currentFile: int = 0
+        self.totalFiles: int = 0
+        self.filesInReport: int = 0
+        self.imageFiles: int = 0
+        self.noImageFile: int = 0
+        self.gif_as_frame: bool = True
+        self.isPauseEmit: bool = False
 
     @QtCore.pyqtSlot(int)
     def setMinScore(self, score):

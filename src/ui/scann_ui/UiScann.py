@@ -9,34 +9,30 @@ from src.Nsfw.vic13 import readVICFromFile, genNewVic, updateMedia
 
 class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
 
-    nsfw: NsfwScann = None
-    imgFinder: ImagesFinder = None
-    scannFolder: str = ''
-    vicFile: str = ''
-    saveFile: str = ''
-    saveFolder: str = ''
-    VIC = None
-
-    isInScann: bool = False
-    isScannFinish: bool = False
-    isScannNsfw: bool = True
-
-    timer: QtCore.QTimer = QtCore.QTimer()
-    charId: int = 0
-    currentTxt: str = ''
-    #Nsfw Log Vars
-    nsfw_log_list: list = []
-    next_udate_item: int = 0
-    nro_items: int = 5
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
+        self.scannFolder: str = ''
+        self.vicFile: str = ''
+        self.saveFile: str = ''
+        self.saveFolder: str = ''
+        self.VIC = None
+        self.isInScann: bool = False
+        self.isScannFinish: bool = False
+        self.isScannNsfw: bool = True
+        self.timer: QtCore.QTimer = QtCore.QTimer()
+        self.charId: int = 0
+        self.currentTxt: str = ''
+        #Nsfw Log Vars
+        self.nsfw_log_list: list = []
+        self.next_udate_item: int = 0
+        self.nro_items: int = 5
         self.showProsess(False)
         self.video_viewer.setVisible(False)
         self.logImages.setVisible(False)
         self.resize(self.groupBox.size())
-        self.nsfw = NsfwScann(self)
+        self.imgFinder: ImagesFinder = None
+        self.nsfw: NsfwScann = NsfwScann(self)
         self.nsfw.progressMax.connect(self.progressBar.setMaximum)
         self.nsfw.progress.connect(self.progressBar.setValue)
         self.nsfw.statusBar.connect(self.setStatusBar)
