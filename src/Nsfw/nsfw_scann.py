@@ -307,8 +307,6 @@ class NsfwScann(QtCore.QThread):
                 self.__emitStatus()
             self.currentFile += 1
             self.progress.emit(self.currentFile)
-            
-
         if not self.isCanceled:
             self.status.emit(Message('\nEscaneo Terminado!', False))
             self.status.emit(Message('Total de Archivos: %d' %
