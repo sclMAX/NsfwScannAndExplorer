@@ -59,6 +59,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         self.chkScannNsfw.stateChanged.connect(self.chkScannNsfw_stateChanged)
         self.chkShowImage.stateChanged.connect(self.showImage)
         self.chkGif_as_frame.stateChanged.connect(self.nsfw.setGif_as_frame)
+        self.chkIsScannVideos.stateChanged.connect(self.nsfw.setIsScannVideos)
 
     def showProsess(self, isShow=False):
         self.progressBar.setVisible(isShow)
@@ -161,7 +162,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
 
     def nsfw_finish(self, media):
         try:
-            if((media) and (not self.nsfw.isCanceled)):
+            if media:
                 updateMedia(self.VIC, media)
                 import json
                 self.setStatus(
@@ -178,8 +179,9 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
                 self.isScannFinish = True
                 self.isInScann = False
                 self.btnAceptar.setEnabled(True)
-            else:
+            if self.nsfw.isCanceled:
                 self.setStatus(Message('Proceso Cancelado!', False, DANGER))
+                self.setStatus(Message('Se guardo el progreso en %s' % self.saveFile, False, WARNING))
                 self.isInScann = False
         finally:
             self.setBtnsEnabled(True)
@@ -220,7 +222,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         elif self.vicFile:
             self.VIC = readVICFromFile(self.vicFile)
             basePath = Path(self.vicFile).parent
-            self.nsfw.scannVIC(self.VIC, str(basePath), self.saveFolder, self.cbxProcesador.currentIndex())
+            self.nsfw.scannVIC(self.VIC, str(basePath), self.saveFolder)
         else:
             self.showProsess(False)
 
@@ -277,7 +279,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         if media:
             updateMedia(self.VIC, media)
             if self.isScannNsfw:
-                self.nsfw.scannVIC(self.VIC, '', self.saveFolder, self.cbxProcesador.currentIndex())
+                self.nsfw.scannVIC(self.VIC, '', self.saveFolder)
             else:
                 self.nsfw_finish(media)
         else:

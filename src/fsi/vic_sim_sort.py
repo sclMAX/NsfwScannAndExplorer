@@ -13,6 +13,7 @@ from src.fsi.kNN import kNN
 from src.utils.sort_utils import find_topk_unique
 from src.utils.formats import secondsToHMS
 from src.utils import Image as ImgTools
+from src.Nsfw.vic13 import updateMediaItem
 
 
 def imageToCNN(file_path: str, isCaffe: bool):
@@ -199,7 +200,11 @@ class VICMediaSimSort(QtCore.QThread):
                 mem = virtual_memory()
                 self.__emitLoadStatus(total, count, file_path, mem.percent)
                 img_blob = imageToCNN(file_path, self.isBackendCaffe)
-                item['IdKNN'] = shape_x
+                coment = item.get('Comments')
+                updateMediaItem(item, {
+                    'Comments': coment,
+                    'IdKNN': shape_x
+                })
                 X.append(self.__getFeatures(img_blob))
                 shape_x += 1
                 if self.n_neighbors < 50:

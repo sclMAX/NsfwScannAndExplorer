@@ -56,7 +56,7 @@ class NsfwScann(QtCore.QThread):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.dnn_target = cv.dnn.DNN_TARGET_CPU
+        self.isScannVideos: bool = True
 
     @QtCore.pyqtSlot(int)
     def setMinScore(self, score):
@@ -65,6 +65,10 @@ class NsfwScann(QtCore.QThread):
     @QtCore.pyqtSlot(int)
     def setGif_as_frame(self, chkState: int):
         self.gif_as_frame = chkState > 0
+
+    @QtCore.pyqtSlot(int)
+    def setIsScannVideos(self, chkState: int):
+        self.isScannVideos = chkState > 0
 
     @QtCore.pyqtSlot()
     def stop(self):
@@ -77,27 +81,17 @@ class NsfwScann(QtCore.QThread):
 
     def __loadModel(self):
         try:
-            self.status.emit(
-                Message('Cargando Modelo...', True, NORMAL, False))
-            model_loaded = cv.dnn.readNetFromCaffe(
-                prototxt=self.model_file, caffeModel=self.weight_file)
-            model_loaded.setPreferableTarget(self.dnn_target)
+            self.status.emit(Message('Cargando Modelo...', True, NORMAL, False))
+            model_loaded = cv.dnn.readNetFromCaffe(prototxt=self.model_file, caffeModel=self.weight_file)
             self.status.emit(Message('Modelo Cargado!', False, NORMAL, False))
             return model_loaded
         except FileNotFoundError:
-            self.status.emit(
-                Message('No se encontraron los archivos del Modelo!', False, DANGER))
+            self.status.emit(Message('No se encontraron los archivos del Modelo!', False, DANGER))
             self.stop()
 
     def __getScore(self, inputBlob):
         self.model.setInput(inputBlob)
-        try:
-            pred: float = self.model.forward()[0][1]
-            return pred
-        except cv.error:
-            self.status.emit(Message('Procesador NO Soportado!', False, DANGER, True))
-            self.stop()
-            return -10
+        return self.model.forward()[0][1]
 
     def __video_emit(self, frame, score):
         height, width, _ = frame.shape
@@ -216,14 +210,16 @@ class NsfwScann(QtCore.QThread):
             file_type = ['']
             file_extension = ['']
         if 'video' in file_type:
-            score = self.__scannVideo(file_path)
-        else:
-            if ('gif' in file_extension) and self.gif_as_frame:
-                score = self.__scannGif(file_path)
+            if self.isScannVideos:
+                score = self.__scannVideo(file_path)
             else:
-                score, img = self.__scannImage(file_path)
-                if((score >= self.minScore)and(img)):
-                    self.image.emit(ImageNsfw(score, file_path))
+                score = -10
+        elif ('gif' in file_extension) and self.gif_as_frame:
+            score = self.__scannGif(file_path)
+        else:
+            score, img = self.__scannImage(file_path)
+            if((score >= self.minScore)and(img)):
+                self.image.emit(ImageNsfw(score, file_path))
         return (score, file_type[0] if file_type else file_type, file_extension[0] if file_extension else file_extension)
 
     def __emitStatus(self):
@@ -244,7 +240,7 @@ class NsfwScann(QtCore.QThread):
             txt: str = 'TT: %s @ %.2f A/seg' % (strTT, self.archivos / ett)
             self.statusBar.emit(txt)
 
-    def scannVIC(self, VIC, basePath, saveFolder, dnn_target: int):
+    def scannVIC(self, VIC, basePath, saveFolder):
         self.ti = time()
         self.saveFolder = saveFolder
         if isVICValid(VIC):
@@ -252,19 +248,6 @@ class NsfwScann(QtCore.QThread):
             if self.media:
                 self.status.emit(Message(getVicCaseData(VIC)))
                 self.basePath = basePath
-                try:
-                    if dnn_target == 2:
-                        self.dnn_target = cv.dnn.DNN_TARGET_OPENCL_FP16
-                    elif dnn_target == 1:
-                        self.dnn_target = cv.dnn.DNN_TARGET_OPENCL
-                    else:
-                        self.dnn_target = cv.dnn.DNN_TARGET_CPU
-                    if self.model:
-                        self.model.setPreferableTarget(self.dnn_target)
-                except AttributeError:
-                    self.status.emit(Message('Procesador NO Soportado!', False, DANGER, True))
-                    self.finish.emit(None)
-                    return
                 self.start(priority=QtCore.QThread.HighestPriority)
             else:
                 self.status.emit(Message(
@@ -291,37 +274,40 @@ class NsfwScann(QtCore.QThread):
                     self.status.emit(Message('PAUSADO!', False, NORMAL, False))
                     self.isPauseEmit = True
             self.isPauseEmit = False
+            isScannedNsfw = m.get('isScannedNsfw')
             img_path = str(m['RelativeFilePath']).replace('\\', '/')
             self.status.emit(
                 Message('Escanenado: ' + img_path, False, NORMAL, False))
-            img_path = Path(img_path)
-            if self.basePath:
-                img_path = Path(self.basePath).joinpath(img_path)
-            score, file_type, file_extension = self.getScore(str(img_path))
-            if score >= self.minScore:
-                msg = Message('SI %2.4f - %s' %
-                              (score, img_path), False, NORMAL)
-                self.filesInReport += 1
-                self.imageFiles += 1
-            elif score == -1:
-                msg = Message('NO IMAGEN! - %s' % (img_path), False, DANGER)
-                self.noImageFile += 1
-            elif score == -10:
-                msg = Message('')
-            else:
-                msg = Message('NO %2.4f - %s' %
-                              (score, img_path), False, WARNING)
-                self.imageFiles += 1
-            updateMediaItem(m, {
-                'Comments': ('%2.4f' % (score)),
-                'FileType': file_type,
-                'FileExtension': file_extension
-            })
-
-            self.status.emit(msg)
+            if not isScannedNsfw:
+                isScannedNsfw = True
+                img_path = Path(img_path)
+                if self.basePath:
+                    img_path = Path(self.basePath).joinpath(img_path)
+                score, file_type, file_extension = self.getScore(str(img_path))
+                if score >= self.minScore:
+                    msg = Message('SI %2.4f - %s' %(score, img_path), False, NORMAL)
+                    self.filesInReport += 1
+                    self.imageFiles += 1
+                elif score == -1:
+                    msg = Message('NO IMAGEN! - %s' % (img_path), False, DANGER)
+                    self.noImageFile += 1
+                elif score == -10:
+                    msg = Message('')
+                    isScannedNsfw = False
+                else:
+                    msg = Message('NO %2.4f - %s' % (score, img_path), False, WARNING)
+                    self.imageFiles += 1
+                updateMediaItem(m, {
+                    'Comments': ('%2.4f' % (score)),
+                    'FileType': file_type,
+                    'FileExtension': file_extension,
+                    'isScannedNsfw': isScannedNsfw
+                })
+                self.status.emit(msg)
+                self.__emitStatus()
             self.currentFile += 1
             self.progress.emit(self.currentFile)
-            self.__emitStatus()
+            
 
         if not self.isCanceled:
             self.status.emit(Message('\nEscaneo Terminado!', False))

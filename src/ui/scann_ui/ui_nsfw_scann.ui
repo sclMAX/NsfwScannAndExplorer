@@ -268,28 +268,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QComboBox" name="cbxProcesador">
-            <property name="currentIndex">
-             <number>0</number>
-            </property>
-            <item>
-             <property name="text">
-              <string>CPU</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>OpenCL</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>OpenCL FP16</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item>
            <widget class="QCheckBox" name="chkScannNsfw">
             <property name="toolTip">
              <string>Si esta activado realiza en escaneo de las imagenes con Nsfw</string>
@@ -322,6 +300,19 @@
             </property>
             <property name="text">
              <string>Escanear GIF por frames</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="chkIsScannVideos">
+            <property name="toolTip">
+             <string>Si esta activado escanea los Videos, de lo contrario los omite.</string>
+            </property>
+            <property name="text">
+             <string>Escanear Videos</string>
             </property>
             <property name="checked">
              <bool>true</bool>
