@@ -172,7 +172,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
                                        (self.saveFile), False))
                 self.setStatus(Message('Guardando Log..', True, NORMAL, False))
                 logFilePath = Path(self.saveFolder).joinpath('log.txt')
-                with open(str(logFilePath), 'w') as logFile:
+                with open(str(logFilePath), 'w+') as logFile:
                     logFile.write(str(self.txtLog.toPlainText()))
                 self.setStatus(Message('Log Guardado en: %s' %
                                        (logFilePath), False))
