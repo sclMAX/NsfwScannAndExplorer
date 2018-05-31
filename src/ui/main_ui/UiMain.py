@@ -174,13 +174,15 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                     query_img_file=self.image_to_find_file,
                     media=self.media,
                     vic_file=self.vic_file,
-                    isBackendCaffe=self.chkCaffe.isChecked()
+                    isBackendCaffe=self.chkCaffe.isChecked(),
+                    n_neighbors=self.spxNeighbors.value()
                 )
                 self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
                 self.VICSort.status.connect(self.__VICMediaSimSort_status)
                 self.VICSort.saveMedia.connect(self.__VICMediaSimSort_saveMedia)
                 self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
             else:
+                self.VICSort.setN_Neighbors(self.spxNeighbors.value())
                 self.VICSort.setQuery_img(self.image_to_find_file)
             self.btnStop.setVisible(True)
             self.btnStop.clicked.connect(self.VICSort.stop)
@@ -399,6 +401,11 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             self.lblStatus.setText(self.vic_file)
             self.VIC = readVICFromFile(self.vic_file)
             self.media = getMediaFormVIC(self.VIC)
+            if self.media:
+                media_count = len(self.media)
+                self.spxNeighbors.setMaximum(media_count)
+                if media_count < 50:
+                    self.spxNeighbors.setValue(media_count)
             self.VICSort = None
             self.current_page = 1
             self.__updateView()

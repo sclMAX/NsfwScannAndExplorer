@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main_ui/ui_main.ui'
+# Form implementation generated from reading ui file 'src/ui/main_ui/ui_main.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -168,13 +168,24 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.addWidget(self.chkTensorflow)
         self.verticalLayout_9.addLayout(self.verticalLayout_8)
         self.verticalLayout_7.addWidget(self.gbxBackend)
+        self.groupBox_2 = QtWidgets.QGroupBox(self.gbBuscarImagen)
+        self.groupBox_2.setObjectName("groupBox_2")
+        self.verticalLayout_11 = QtWidgets.QVBoxLayout(self.groupBox_2)
+        self.verticalLayout_11.setObjectName("verticalLayout_11")
+        self.spxNeighbors = QtWidgets.QSpinBox(self.groupBox_2)
+        self.spxNeighbors.setMinimum(2)
+        self.spxNeighbors.setMaximum(100)
+        self.spxNeighbors.setProperty("value", 50)
+        self.spxNeighbors.setObjectName("spxNeighbors")
+        self.verticalLayout_11.addWidget(self.spxNeighbors)
+        self.verticalLayout_7.addWidget(self.groupBox_2)
         self.horizontalLayout_3.addWidget(self.gbBuscarImagen, 0, QtCore.Qt.AlignTop)
         self.listView = QtWidgets.QScrollArea(self.centralwidget)
         self.listView.setAutoFillBackground(True)
         self.listView.setWidgetResizable(True)
         self.listView.setObjectName("listView")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 851, 540))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 841, 523))
         self.scrollAreaWidgetContents.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
@@ -340,6 +351,7 @@ class Ui_MainWindow(object):
         self.gbxBackend.setTitle(_translate("MainWindow", "Backend"))
         self.chkCaffe.setText(_translate("MainWindow", "Caffe"))
         self.chkTensorflow.setText(_translate("MainWindow", "TensorFlow"))
+        self.groupBox_2.setTitle(_translate("MainWindow", "Ordenar primeras"))
         self.btnListUp.setToolTip(_translate("MainWindow", "Pagina Anterior."))
         self.lblPages.setText(_translate("MainWindow", "1/1"))
         self.btnListDown.setToolTip(_translate("MainWindow", "Pagina Siguiente."))

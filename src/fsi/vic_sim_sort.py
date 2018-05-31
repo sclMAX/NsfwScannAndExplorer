@@ -68,11 +68,12 @@ class VICMediaSimSort(QtCore.QThread):
     progress: QtCore.pyqtSignal = QtCore.pyqtSignal(int, int)  # value, maximum
     status: QtCore.pyqtSignal = QtCore.pyqtSignal(str)
 
-    def __init__(self, parent: QtCore.QObject, query_img_file: str, media: list, vic_file: str, isBackendCaffe: bool):
+    def __init__(self, parent: QtCore.QObject, query_img_file: str, media: list, vic_file: str, isBackendCaffe: bool, n_neighbors: int):
         super().__init__(parent)
         # Files paths
         self.parent = parent
         self.isStop: bool = False
+        self.CaffeOutLayer: str = ''
         self.base_path: str = str(Path(vic_file).parent)
         self.file_npy: str = str(
             Path(self.base_path).joinpath(Path(vic_file).stem + '.npy'))
@@ -86,7 +87,7 @@ class VICMediaSimSort(QtCore.QThread):
         self.__knn: kNN = None
         self.tInicio: int = None
         self.tInicioProceso: int = None
-        self.n_neighbors: int = 0
+        self.n_neighbors: int = n_neighbors
         self.setQuery_img(query_img_file)
 
     @QtCore.pyqtSlot(bool)
@@ -96,6 +97,12 @@ class VICMediaSimSort(QtCore.QThread):
     @QtCore.pyqtSlot()
     def stop(self):
         self.isStop = True
+
+    @QtCore.pyqtSlot(int)
+    def setN_Neighbors(self, n_neighbors: int):
+        if self.n_neighbors != n_neighbors:
+            self.n_neighbors = n_neighbors
+            self.__loadKNN()
 
     def setQuery_img(self, query_img_file: str):
         self.query_img = ImageCNN({'RelativeFilePath': query_img_file}, '')
@@ -170,8 +177,7 @@ class VICMediaSimSort(QtCore.QThread):
                 X: list = pickle.load(file)
             shape_x = 0
             for _ in X:
-                shape_x += 1 
-            self.n_neighbors = shape_x if shape_x < 50 else 50
+                shape_x += 1
             return True, True, True, X, shape_x
         return True, False, False, X, 0
 
@@ -207,10 +213,6 @@ class VICMediaSimSort(QtCore.QThread):
                 })
                 X.append(self.__getFeatures(img_blob))
                 shape_x += 1
-                if self.n_neighbors < 50:
-                    self.n_neighbors += 1
-                else:
-                    self.n_neighbors = 50
                 if mem.percent > 40 and not isMemmap:
                     print('MEMMAP ACTIVADO!')
                     self.status.emit('Activando Mapeo de Memoria...')
@@ -238,31 +240,20 @@ class VICMediaSimSort(QtCore.QThread):
 
     def __prepareKNN(self, X):
         self.__knn = kNN()
+        if isinstance(X, list):
+            if self.n_neighbors > len(X):
+                self.n_neighbors = len(X)
         self.__knn.compile(n_neighbors=self.n_neighbors,
                            algorithm="auto", metric="cosine")
         self.status.emit('Entrenando KNN Net...')
         self.progress.emit(0, 0)
         self.__knn.fit(X)
 
-    def setN_neighbors(self):
-        count: int = 0
-        total: int = len(self.VICMedia)
-        for item in self.VICMedia:
-            count += 1
-            self.progress.emit(count, total)
-            idKNN = item.get('IdKNN')
-            if idKNN and idKNN >= 0:
-                if self.n_neighbors < 50:
-                    self.n_neighbors += 1
-                else:
-                    break
-
     def __loadKNN(self):
         if Path(self.file_npy).exists():
             self.status.emit('Cargando archivo de caracteristicas...')
             self.progress.emit(0, 0)
             X = np.load(self.file_npy, mmap_mode='r+')
-            self.setN_neighbors()
             self.__prepareKNN(X)
             return True
         return False
@@ -276,8 +267,6 @@ class VICMediaSimSort(QtCore.QThread):
         indices = indices.flatten()
         indices, distances = find_topk_unique(
             indices, distances, self.n_neighbors)
-        del distances
-        gc.collect()
         return indices
 
     def run(self):
@@ -292,9 +281,6 @@ class VICMediaSimSort(QtCore.QThread):
             if not self.__loadKNN() or not isinstance(idKNN, int):
                 self.__loadAllImages()
                 self.saveMedia.emit(self.VICMedia)
-            else:
-                self.status.emit('Calculando Media Items...')
-                self.setN_neighbors()
         indices = self.__orderIndices()
         resultMedia: list = []
         imgs = indices[0]
