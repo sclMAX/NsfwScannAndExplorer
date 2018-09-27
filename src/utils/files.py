@@ -33,9 +33,10 @@ class ImagesFinder(QtCore.QThread):
     totalFiles: int = 0
     totalImages: int = 0
 
-    def __init__(self, parent: object, findPath: str):
+    def __init__(self, parent: object, findPath: str, savePath: str):
         super().__init__(parent)
         self.findPath = findPath
+        self.savePath = savePath
 
     def find(self):
         self.tInico = time()
@@ -69,6 +70,7 @@ class ImagesFinder(QtCore.QThread):
             return (None, None)
 
     def __findImages(self, path: str):
+        import os
         dirpath = Path(path)
         assert dirpath.is_dir()
         file_list = []
@@ -83,7 +85,7 @@ class ImagesFinder(QtCore.QThread):
                         continue
                     self.totalImages += 1
                     file_list.append(
-                        {'file': str(x), 'type': fileType, 'extension': fileExtension})
+                        {'file': str(Path(os.path.relpath(x, self.savePath))), 'type': fileType, 'extension': fileExtension})
                 finally:
                     txt: str = 'Encontradas %d Imagenes  de %d Archivos encontrados! Buscando...' % (
                         self.totalImages, self.totalFiles)

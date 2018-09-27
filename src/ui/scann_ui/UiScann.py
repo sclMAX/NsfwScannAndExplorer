@@ -263,7 +263,7 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
             self.btnStart.setEnabled(False)
 
     def scannFolder_Start(self):
-        self.imgFinder = ImagesFinder(self, self.scannFolder)
+        self.imgFinder = ImagesFinder(self, self.scannFolder, self.saveFolder)
         self.imgFinder.status.connect(self.setStatus)
         self.imgFinder.statusBar.connect(self.setStatusBar)
         self.imgFinder.finish.connect(self.ImagesFinder_Finish)
