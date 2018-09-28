@@ -273,7 +273,12 @@ class NsfwScann(QtCore.QThread):
                     self.isPauseEmit = True
             self.isPauseEmit = False
             isScannedNsfw = m.get('isScannedNsfw')
-            img_path = str(m['RelativeFilePath']).replace('\\', '/')
+            relative_file_path = m.get('RelativeFilePath')
+            if not relative_file_path:
+                media_id = m.get('MediaID')
+                self.status.emit(Message('RelativeFilePath Incorrecto! MediaID: %d' % (media_id), False, WARNING, True))
+                continue
+            img_path = str(relative_file_path).replace('\\', '/')
             self.status.emit(
                 Message('Escanenado: ' + img_path, False, NORMAL, False))
             if not isScannedNsfw:
