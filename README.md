@@ -4,8 +4,9 @@ Escanea imagenes en Directorio o Reporte VIC 1.3 y las clasifica por score con C
 Descargar el siguiente Archivo dentro de la carpeta "model"
     http://www.robots.ox.ac.uk/~vgg/software/very_deep/caffe/VGG_ILSVRC_19_layers.caffemodel
 
-#INSTALAR EN FEDORA 
-    ##Actualizar pip
+# INSTALAR EN FEDORA 
+
+## Actualizar pip
 sudo pip3 install --upgrade pip 
 #Configuracion para desarrollo gcc c/c++
 sudo dnf install redhat-rpm-config 
