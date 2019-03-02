@@ -79,12 +79,15 @@ class NsfwScann(QtCore.QThread):
 
     def __loadModel(self):
         try:
-            self.status.emit(Message('Cargando Modelo...', True, NORMAL, False))
-            model_loaded = cv.dnn.readNetFromCaffe(prototxt=self.model_file, caffeModel=self.weight_file)
+            self.status.emit(
+                Message('Cargando Modelo...', True, NORMAL, False))
+            model_loaded = cv.dnn.readNetFromCaffe(
+                prototxt=self.model_file, caffeModel=self.weight_file)
             self.status.emit(Message('Modelo Cargado!', False, NORMAL, False))
             return model_loaded
         except FileNotFoundError:
-            self.status.emit(Message('No se encontraron los archivos del Modelo!', False, DANGER))
+            self.status.emit(
+                Message('No se encontraron los archivos del Modelo!', False, DANGER))
             self.stop()
 
     def __getScore(self, inputBlob):
@@ -191,10 +194,11 @@ class NsfwScann(QtCore.QThread):
             inputblob = cv.dnn.blobFromImage(
                 img_na, 1., (224, 224), (104, 117, 123), False, False)
             return (self.__getScore(inputblob), img)
-        except (ValueError, SyntaxError, OSError, TypeError, RuntimeError, Image.DecompressionBombError):
+        except (ValueError, SyntaxError, OSError, TypeError, RuntimeError, Image.DecompressionBombError, AttributeError):
             return (-1, None)
         except ImportError:
-            self.status.emit(Message('PILLOW no instalado!', False, DANGER, True))
+            self.status.emit(
+                Message('PILLOW no instalado!', False, DANGER, True))
             self.stop()
 
     def getScore(self, file_path: str):
@@ -276,7 +280,8 @@ class NsfwScann(QtCore.QThread):
             relative_file_path = m.get('RelativeFilePath')
             if not relative_file_path:
                 media_id = m.get('MediaID')
-                self.status.emit(Message('RelativeFilePath Incorrecto! MediaID: %d' % (media_id), False, WARNING, True))
+                self.status.emit(Message('RelativeFilePath Incorrecto! MediaID: %d' % (
+                    media_id), False, WARNING, True))
                 continue
             img_path = str(relative_file_path).replace('\\', '/')
             self.status.emit(
@@ -288,17 +293,20 @@ class NsfwScann(QtCore.QThread):
                     img_path = Path(self.basePath).joinpath(img_path)
                 score, file_type, file_extension = self.getScore(str(img_path))
                 if score >= self.minScore:
-                    msg = Message('SI %2.4f - %s' %(score, img_path), False, NORMAL)
+                    msg = Message('SI %2.4f - %s' %
+                                  (score, img_path), False, NORMAL)
                     self.filesInReport += 1
                     self.imageFiles += 1
                 elif score == -1:
-                    msg = Message('NO IMAGEN! - %s' % (img_path), False, DANGER)
+                    msg = Message('NO IMAGEN! - %s' %
+                                  (img_path), False, DANGER)
                     self.noImageFile += 1
                 elif score == -10:
                     msg = Message('')
                     isScannedNsfw = False
                 else:
-                    msg = Message('NO %2.4f - %s' % (score, img_path), False, WARNING)
+                    msg = Message('NO %2.4f - %s' %
+                                  (score, img_path), False, WARNING)
                     self.imageFiles += 1
                 updateMediaItem(m, {
                     'Comments': ('%2.4f' % (score)),
