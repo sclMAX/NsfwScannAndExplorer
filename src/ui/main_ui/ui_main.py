@@ -114,7 +114,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.gbBuscarImagen.sizePolicy().hasHeightForWidth())
         self.gbBuscarImagen.setSizePolicy(sizePolicy)
         self.gbBuscarImagen.setMinimumSize(QtCore.QSize(100, 0))
-        self.gbBuscarImagen.setMaximumSize(QtCore.QSize(148, 16777215))
+        self.gbBuscarImagen.setMaximumSize(QtCore.QSize(148, 15777215))
         self.gbBuscarImagen.setAutoFillBackground(True)
         self.gbBuscarImagen.setAlignment(QtCore.Qt.AlignCenter)
         self.gbBuscarImagen.setFlat(False)
