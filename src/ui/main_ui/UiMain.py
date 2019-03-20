@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pathlib import Path
 import json
 from src.ui.main_ui.ui_main import Ui_MainWindow

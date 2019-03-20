@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from src.ui.vic_edit_ui.ui_vic_edit import QtWidgets, QtCore, Ui_DialogVicEdit
 
 

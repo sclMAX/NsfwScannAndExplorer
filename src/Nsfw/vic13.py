@@ -1,6 +1,6 @@
+# -*- coding: utf-8 -*-
 import json
 import codecs
-
 
 def isVICValid(VIC):
     return VIC.get('odata.metadata') and VIC.get('value')

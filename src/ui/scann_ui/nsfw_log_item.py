@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import webbrowser
 from pathlib import Path
 from PyQt5 import QtWidgets, QtCore, QtGui

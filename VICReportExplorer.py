@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from PyQt5 import QtWidgets
 from src.ui.main_ui.UiMain import UiMain
 

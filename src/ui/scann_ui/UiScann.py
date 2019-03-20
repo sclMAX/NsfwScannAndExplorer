@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pathlib import Path
 from src.ui.scann_ui.ui_nsfw_scann import Ui_dlgNsfwScanner, QtWidgets
 from src.ui.scann_ui.nsfw_log_item import NsfwLogItem

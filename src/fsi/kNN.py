@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 
  kNN.py (author: Anson Wong / github: ankonzoid)
