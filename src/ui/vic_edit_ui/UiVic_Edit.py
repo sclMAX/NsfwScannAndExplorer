@@ -11,6 +11,8 @@ class DlgVicEdit(QtWidgets.QDialog, Ui_DialogVicEdit):
         self.loadData()
         self.btnAceptar.clicked.connect(self.btnAceptar_click)
         self.btnClose.clicked.connect(self.btnClose_click)
+        self.Category.setFocus()
+        self.Category.returnPressed.connect(self.btnAceptar_click)
 
     def loadData(self):
         self.Category.setText(str(self.media_item.get('Category')))
