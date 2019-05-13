@@ -55,8 +55,12 @@ class NsfwCard(QtWidgets.QFrame):
         if media:
             file_path = media[0].get('FilePath')
             file_name = media[0].get('FileName')
-            return ('RelativeFilePath: %s \nFilePath: %s \nFileName: %s' % (self.getFilePath(), file_path, file_name))
+            return 'RelativeFilePath: %s \nFilePath: %s \nFileName: %s' % (self.getFilePath(), file_path, file_name)
         return self.getFilePath()
+
+    def getCategory(self):
+        category = self.data.get('Category')
+        return category
 
     def getImage(self):
         file_path = self.getFilePath()
@@ -200,6 +204,11 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_btnRemove.setIconSize(QtCore.QSize(16, 16))
         self.self_btnRemove.setToolTip('Quitar del reporte.')
         self.self_buttons.addWidget(self.self_btnRemove)
+        # Category
+        category = self.getCategory()
+        if category != None:
+            self.createCat(category)
+        #/Category
         self.verticalLayout.addWidget(
             self.horizontalFrame, 0, QtCore.Qt.AlignTop)
         self.self_image = QtWidgets.QLabel(self)
@@ -243,11 +252,37 @@ class NsfwCard(QtWidgets.QFrame):
     def btnOpen_click(self):
         webbrowser.open_new_tab(self.getFilePath())
 
+    def createCat(self, category):
+        self.self_cat = QtWidgets.QLabel(self.horizontalFrame)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.self_cat.sizePolicy().hasHeightForWidth())
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.self_cat.setSizePolicy(sizePolicy)
+        self.self_cat.setFont(font)
+        self.self_cat.setStyleSheet('color: blue; background: gray')
+        self.self_cat.setText(category)
+        self.self_cat.setScaledContents(True)
+        self.self_cat.setAlignment(QtCore.Qt.AlignCenter)
+        self.self_buttons.addWidget(self.self_cat)
+
     def btnEdit_click(self):
         self.dlgEdit = DlgVicEdit(self, self.data)
         if self.dlgEdit.exec_():
             self.data = self.dlgEdit.media_item
             self.update_me.emit()
+            category = self.getCategory()
+            if category != None:
+                try:
+                    self.self_cat.setText(category)
+                except AttributeError:
+                    self.createCat(category)
 
     def btnRemove_click(self):
         self.remove_me.emit(self)
