@@ -436,8 +436,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>841</width>
-             <height>523</height>
+             <width>849</width>
+             <height>540</height>
             </rect>
            </property>
            <property name="layoutDirection">
@@ -599,6 +599,35 @@
              </property>
              <property name="checked">
               <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="maximumSize">
+              <size>
+               <width>58</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Category</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="lblCategory">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>58</width>
+               <height>16777215</height>
+              </size>
              </property>
             </widget>
            </item>

@@ -180,7 +180,8 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
                 )
                 self.VICSort.progress.connect(self.__VICMediaSimSort_progress)
                 self.VICSort.status.connect(self.__VICMediaSimSort_status)
-                self.VICSort.saveMedia.connect(self.__VICMediaSimSort_saveMedia)
+                self.VICSort.saveMedia.connect(
+                    self.__VICMediaSimSort_saveMedia)
                 self.VICSort.finish.connect(self.__VICMediaSimSort_finish)
             else:
                 self.VICSort.setN_Neighbors(self.spxNeighbors.value())
@@ -272,15 +273,21 @@ class UiMain(QtWidgets.QMainWindow, Ui_MainWindow):
             total: int = len(self.media)
             self.progressBar.setVisible(True)
             self.progressBar.setMaximum(total)
+            category = self.lblCategory.text()
             for media in self.media:
                 self.setProgressStatus(
                     'Analizando %d de %d...' % (count, total))
                 count += 1
                 self.progressBar.setValue(count)
                 try:
-                    score = float(media['Comments'])
-                    if (self.isFilterInvert and score <= self.filter_value) or (not self.isFilterInvert and score >= self.filter_value):
-                        self.filter_media.append(media)
+                    if category:
+                        cat = str(media['Category'])
+                        if(cat == category):
+                            self.filter_media.append(media)
+                    else:
+                        score = float(media['Comments'])
+                        if (self.isFilterInvert and score <= self.filter_value) or (not self.isFilterInvert and score >= self.filter_value):
+                            self.filter_media.append(media)
                 except ValueError:
                     continue
             self.progressBar.setVisible(False)

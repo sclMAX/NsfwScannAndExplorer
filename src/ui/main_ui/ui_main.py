@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'src/ui/main_ui/ui_main.ui'
+# Form implementation generated from reading ui file 'main_ui/ui_main.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -8,7 +8,6 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from src.ui import resources_rc
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -114,7 +113,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.gbBuscarImagen.sizePolicy().hasHeightForWidth())
         self.gbBuscarImagen.setSizePolicy(sizePolicy)
         self.gbBuscarImagen.setMinimumSize(QtCore.QSize(100, 0))
-        self.gbBuscarImagen.setMaximumSize(QtCore.QSize(148, 15777215))
+        self.gbBuscarImagen.setMaximumSize(QtCore.QSize(148, 16777215))
         self.gbBuscarImagen.setAutoFillBackground(True)
         self.gbBuscarImagen.setAlignment(QtCore.Qt.AlignCenter)
         self.gbBuscarImagen.setFlat(False)
@@ -185,7 +184,7 @@ class Ui_MainWindow(object):
         self.listView.setWidgetResizable(True)
         self.listView.setObjectName("listView")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 841, 523))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 849, 540))
         self.scrollAreaWidgetContents.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
@@ -254,6 +253,19 @@ class Ui_MainWindow(object):
         self.btnFiltro.setChecked(False)
         self.btnFiltro.setObjectName("btnFiltro")
         self.verticalLayout.addWidget(self.btnFiltro)
+        self.label_2 = QtWidgets.QLabel(self.frame)
+        self.label_2.setMaximumSize(QtCore.QSize(58, 16777215))
+        self.label_2.setObjectName("label_2")
+        self.verticalLayout.addWidget(self.label_2)
+        self.lblCategory = QtWidgets.QLineEdit(self.frame)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.lblCategory.sizePolicy().hasHeightForWidth())
+        self.lblCategory.setSizePolicy(sizePolicy)
+        self.lblCategory.setMaximumSize(QtCore.QSize(58, 16777215))
+        self.lblCategory.setObjectName("lblCategory")
+        self.verticalLayout.addWidget(self.lblCategory)
         self.lblFiltro = QtWidgets.QLabel(self.frame)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -356,8 +368,10 @@ class Ui_MainWindow(object):
         self.lblPages.setText(_translate("MainWindow", "1/1"))
         self.btnListDown.setToolTip(_translate("MainWindow", "Pagina Siguiente."))
         self.btnFiltro.setToolTip(_translate("MainWindow", "Aplicar / Quitar Filtro."))
+        self.label_2.setText(_translate("MainWindow", "Category"))
         self.lblFiltro.setText(_translate("MainWindow", ">15%"))
         self.btnFiltro_Invertir.setToolTip(_translate("MainWindow", "Invertir filtro."))
         self.slrFiltro.setToolTip(_translate("MainWindow", "<html><head/><body><p>Especificar Filtro por Probabilidad.</p></body></html>"))
         self.btnStop.setToolTip(_translate("MainWindow", "Parar Proceso"))
         self.btnStop.setAccessibleName(_translate("MainWindow", "Escanear Directorio."))
+
