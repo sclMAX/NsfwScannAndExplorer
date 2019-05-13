@@ -24,7 +24,6 @@ class NsfwCard(QtWidgets.QFrame):
     nextFrame: int = 1
     __timer: QtCore.QTimer = QtCore.QTimer()
 
-
     def __init__(self, parent, media_item, width: int, height: int, base_path: str, isAnimated: bool):
         super().__init__(parent)
         self.data = media_item
@@ -50,6 +49,14 @@ class NsfwCard(QtWidgets.QFrame):
                 file_path = str(Path(self.base_path).joinpath(file_path))
             return file_path
         return ''
+
+    def getToolTip(self):
+        media = self.data.get('MediaFiles')
+        if media:
+            file_path = media[0].get('FilePath')
+            file_name = media[0].get('FileName')
+            return ('RelativeFilePath: %s \nFilePath: %s \nFileName: %s' % (self.getFilePath(), file_path, file_name))
+        return self.getFilePath()
 
     def getImage(self):
         file_path = self.getFilePath()
@@ -101,7 +108,8 @@ class NsfwCard(QtWidgets.QFrame):
                 height, width, _ = frame.shape
                 bytesPerLine = 3 * width
                 cv.cvtColor(frame, cv.COLOR_BGR2RGB, frame)
-                img = QtGui.QImage(frame.data, width, height, bytesPerLine, QtGui.QImage.Format_RGB888)
+                img = QtGui.QImage(frame.data, width, height,
+                                   bytesPerLine, QtGui.QImage.Format_RGB888)
                 self.self_image.setPixmap(QtGui.QPixmap(img))
                 self.self_image.repaint()
             else:
@@ -136,7 +144,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_buttons = QtWidgets.QHBoxLayout(self.horizontalFrame)
         self.self_buttons.setContentsMargins(2, 2, 2, 2)
         self.self_buttons.setSpacing(2)
-        #btnOpen
+        # btnOpen
         self.self_btnOpen = QtWidgets.QToolButton(self.horizontalFrame)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -156,7 +164,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_btnOpen.setToolTip('Abrir imagen.')
         self.self_buttons.addWidget(self.self_btnOpen)
         #/btnOpen
-        #btnEdit
+        # btnEdit
         self.self_btnEdit = QtWidgets.QToolButton(self.horizontalFrame)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -205,7 +213,7 @@ class NsfwCard(QtWidgets.QFrame):
         self.self_image.setText("")
         self.self_image.setPixmap(self.getImage())
         self.self_image.setScaledContents(True)
-        self.self_image.setToolTip(self.getFilePath())
+        self.self_image.setToolTip(self.getToolTip())
         self.self_image.setAlignment(QtCore.Qt.AlignCenter)
         self.self_image.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
         self.verticalLayout.addWidget(self.self_image)

@@ -182,6 +182,7 @@ class VICMediaSimSort(QtCore.QThread):
         return True, False, False, X, 0
 
     def __loadAllImages(self):
+        from PIL.Image import DecompressionBombError
         count, self.tInicioProceso = 0, time()
         file_npy_tmp = None
         isComplete, isResume, isMemmap, X, shape_x = self.__chkResume()
@@ -222,7 +223,7 @@ class VICMediaSimSort(QtCore.QThread):
                     np.save(file_npy_tmp, X)
                     file_npy_tmp.close()
                     X: list = np.load(file_npy_tmp, mmap_mode='r+')
-            except (ValueError, SyntaxError, OSError, TypeError, RuntimeError):
+            except (ValueError, SyntaxError, OSError, TypeError, RuntimeError, DecompressionBombError):
                 item['IdKNN'] = -1
                 print('IMAGEN ERROR:', file_path)
                 continue
