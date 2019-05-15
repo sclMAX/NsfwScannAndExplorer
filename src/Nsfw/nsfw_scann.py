@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from pathlib import Path
 from time import time
 from PyQt5 import QtCore, QtGui
@@ -180,7 +179,8 @@ class NsfwScann(QtCore.QThread):
                 else:
                     break
             return maxScore
-        except (SystemError, IOError):
+        except (SystemError, IOError) as e:
+            print(e)
             return -1
         finally:
             if cap:
@@ -195,7 +195,8 @@ class NsfwScann(QtCore.QThread):
             inputblob = cv.dnn.blobFromImage(
                 img_na, 1., (224, 224), (104, 117, 123), False, False)
             return (self.__getScore(inputblob), img)
-        except (ValueError, SyntaxError, OSError, TypeError, RuntimeError, Image.DecompressionBombError, AttributeError):
+        except (ValueError, SyntaxError, OSError, TypeError, RuntimeError, Image.DecompressionBombError, AttributeError) as e:
+            print(e)
             return (-1, None)
         except ImportError:
             self.status.emit(
@@ -232,7 +233,7 @@ class NsfwScann(QtCore.QThread):
         if self.tip:
             et: int = ct - self.tip
             strTP: str = secondsToHMS(et)
-            fs: float = self.currentFile / et
+            fs: float = self.currentFile / (et if et > 0 else 1)
             eta = (self.totalFiles - self.currentFile) / (fs if fs else 1)
             strEta: str = secondsToHMS(eta)
             data = (self.currentFile, self.totalFiles, self.filesInReport,
