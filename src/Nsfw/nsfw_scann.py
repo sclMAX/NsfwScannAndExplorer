@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pathlib import Path
 from time import time
 from PyQt5 import QtCore, QtGui
