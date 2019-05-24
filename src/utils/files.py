@@ -84,8 +84,12 @@ class ImagesFinder(QtCore.QThread):
                     if not fileType:
                         continue
                     self.totalImages += 1
+                    relative_file_path = Path(os.path.relpath( x, self.savePath))
+                    # TODO: VER PROBLEMA CON PATH 
                     file_list.append(
-                        {'file': str(Path(os.path.relpath(x, self.savePath))), 'type': fileType, 'extension': fileExtension})
+                        {'file': str(Path(relative_file_path)), 'type': fileType, 'extension': fileExtension})
+                except (Exception) as e:
+                    print(e)
                 finally:
                     txt: str = 'Encontradas %d Imagenes  de %d Archivos encontrados! Buscando...' % (
                         self.totalImages, self.totalFiles)
@@ -106,6 +110,8 @@ class ImagesFinder(QtCore.QThread):
             self.stop()
             self.finish.emit([])
             return
+        except Exception as e:
+            print (e)
         if fileList:
             # Crear media con las imagen encontradas
             media: list = []
