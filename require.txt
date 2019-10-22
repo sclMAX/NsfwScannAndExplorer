@@ -7,7 +7,7 @@ Keras==2.2.4
 numpy==1.16.2
 opencv-contrib-python==4.0.0.21
 opencv-python==4.0.0.21
-Pillow==5.4.1
+Pillow==6.2.0
 protobuf==3.7.0
 psutil>=5.5.1
 PyQt5==5.10.1
