@@ -213,18 +213,24 @@ class NsfwScann(QtCore.QThread):
         except IOError:
             file_type = ['']
             file_extension = ['']
-        if 'video' in file_type:
-            if self.isScannVideos:
-                score = self.__scannVideo(file_path)
+        except Exception as e:
+            print(e)
+        try:
+            if 'video' in file_type:
+                if self.isScannVideos:
+                    score = self.__scannVideo(file_path)
+                else:
+                    score = -10
+            elif ('gif' in file_extension) and self.gif_as_frame:
+                score = self.__scannGif(file_path)
             else:
-                score = -10
-        elif ('gif' in file_extension) and self.gif_as_frame:
-            score = self.__scannGif(file_path)
-        else:
-            score, img = self.__scannImage(file_path)
-            if((score >= self.minScore)and(img)):
-                self.image.emit(ImageNsfw(score, file_path))
+                score, img = self.__scannImage(file_path)
+                if((score >= self.minScore)and(img)):
+                    self.image.emit(ImageNsfw(score, file_path))
+        except Exception as e:
+            print(e)
         return (score, file_type[0] if file_type else file_type, file_extension[0] if file_extension else file_extension)
+        
 
     def __emitStatus(self):
         ct: int = time()
@@ -279,6 +285,7 @@ class NsfwScann(QtCore.QThread):
                     self.isPauseEmit = True
             self.isPauseEmit = False
             isScannedNsfw = m.get('isScannedNsfw')
+            media_score = m.get('Comments')
             relative_file_path = m.get('RelativeFilePath')
             if not relative_file_path:
                 media_id = m.get('MediaID')
@@ -288,11 +295,12 @@ class NsfwScann(QtCore.QThread):
             img_path = str(relative_file_path).replace('\\', '/')
             self.status.emit(
                 Message('Escanenado: ' + img_path, False, NORMAL, False))
-            if not isScannedNsfw:
+            if not isScannedNsfw or (float(media_score) <= 0):
                 isScannedNsfw = True
                 img_path = Path(img_path)
                 if self.basePath:
                     img_path = Path(self.basePath).joinpath(img_path)
+                print(img_path)
                 score, file_type, file_extension = self.getScore(str(img_path))
                 if score >= self.minScore:
                     msg = Message('SI %2.4f - %s' %

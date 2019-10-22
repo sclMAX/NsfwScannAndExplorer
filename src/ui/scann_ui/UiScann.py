@@ -276,7 +276,8 @@ class DlgScanner(QtWidgets.QDialog, Ui_dlgNsfwScanner):
         if media:
             updateMedia(self.VIC, media)
             if self.isScannNsfw:
-                self.nsfw.scannVIC(self.VIC, '', self.saveFolder)
+                basePath = Path(self.saveFile).parent
+                self.nsfw.scannVIC(self.VIC, str(basePath), self.saveFolder)
             else:
                 self.nsfw_finish(media)
         else:
