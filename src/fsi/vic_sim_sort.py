@@ -223,7 +223,7 @@ class VICMediaSimSort(QtCore.QThread):
                     np.save(file_npy_tmp, X)
                     file_npy_tmp.close()
                     X: list = np.load(file_npy_tmp, mmap_mode='r+')
-            except (ValueError, SyntaxError, OSError, TypeError, RuntimeError, DecompressionBombError):
+            except (ValueError, SyntaxError, OSError, TypeError, RuntimeError, DecompressionBombError, AttributeError):
                 item['IdKNN'] = -1
                 print('IMAGEN ERROR:', file_path)
                 continue
