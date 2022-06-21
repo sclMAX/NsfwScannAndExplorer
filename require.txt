@@ -4,7 +4,7 @@ fleep==1.0.1
 h5py==2.9.0
 imageio==2.5.0
 Keras==2.2.4
-numpy==1.16.2
+numpy==1.22.0
 opencv-contrib-python==4.0.0.21
 opencv-python==4.0.0.21
 Pillow==5.4.1
